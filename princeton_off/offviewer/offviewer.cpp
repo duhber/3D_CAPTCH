@@ -15,6 +15,8 @@
 #include <math.h>
 #include <assert.h>
 #include<fstream>
+#include<string>
+#include<iostream>
 // Windows include files 
 
 #ifdef _WIN32
@@ -29,7 +31,7 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 
-
+using namespace std;
 
 
 ////////////////////////////////////////////////////////////
@@ -73,8 +75,7 @@ int SCREEN_HEIGHT=800;
 
 static char *filename = 0;
 
-
-
+char frname[80];
 // GLUT variables 
 
 static int GLUTwindow = 0;
@@ -365,7 +366,7 @@ void GLUTMotion(int x, int y)
     // Rotate model
     rotation[0] += -0.5 * (y - GLUTmouse[1]);
     rotation[2] += 0.5 * (x - GLUTmouse[0]);
-    capture_frame(framenum++);
+    //capture_frame(framenum++);
   }
   else if (scaling) {
     // Scale window
@@ -442,8 +443,11 @@ void GLUTKeyboard(unsigned char key, int x, int y)
   case 27: // ESCAPE
     GLUTStop();
     break;
+  case 'c':
+    capture_frame(framenum++);
+    break;
   }
-
+  
   // Remember mouse position 
   GLUTmouse[0] = x;
   GLUTmouse[1] = GLUTwindow_height - y;
