@@ -34,9 +34,9 @@ struct uvcoordinate{
 };
 
 struct face{
-    int *vn;
-    int *v;
-    int *vt;
+    int vn[3];
+    int v[3];
+    int vt[3];
     int mId;// material id
     face(int ver[], int vnormal[], int vtex[], int matId);
 };
@@ -57,19 +57,20 @@ class objloader{
 		vector<uvcoordinate*>texture;
 		vector<face*> f;
 		vector<material*>mtl;
-		map<string,unsigned int>mtlmap;
+		map<string,int>mtlmap;
 		vector<unsigned int>texIdList;
 		vector<unsigned int>displayList;
 
 		unsigned int loadTexture(const char *imgname);
 		void loadMaterial(const char* mtlname);
-		void setMaterial(unsigned int matId);
+		void setMaterial(int matId);
 		void clean();
 
 	public:
 		~objloader();
 	 	void loadObj(const char* objname);
 	 	unsigned int drawModel();
+	 	void print();
 };
 
 

@@ -19,9 +19,9 @@ uvcoordinate::uvcoordinate(float a, float b){
 }
 
 face::face(int ver[], int vnormal[], int vtex[], int matId){
-	v=ver;
-	vn=vnormal;
-	vt=vtex;
+	copy(ver,ver+3,v);
+	copy(vnormal, vnormal+3,vn);
+	copy(vtex,vtex+3,vt);
 	mId=matId;
 }
 
@@ -104,7 +104,7 @@ void objloader::loadObj(const char* objname){
 
     ifstream in(objname);
     if(!in.is_open()){
-        cout<<"file can not be open"<<endl;
+        cout<<objname<<" file can not be open"<<endl;
         exit(0);
     }
 
@@ -156,17 +156,19 @@ void objloader::loadObj(const char* objname){
         }
 
         else if(line[0]=='f'){
-        	int vn[3];
-        	int v[3];
-        	int vt[3];
+        	int vnr[3];
+        	int ver[3];
+        	int vtex[]={0,0,0};
 
-            sscanf(line,"f %d/%d/%d %d/%d/%d %d/%d/%d",&v[0],&vt[0],&vn[0],&v[1],&vt[1],&vn[1],&v[2],&vt[2],&vn[2]);
-            f.push_back(new face(v,vn,vt,mId));
+            sscanf(line,"f %d/%d/%d %d/%d/%d %d/%d/%d",&ver[0],&vtex[0],&vnr[0],&ver[1],&vtex[1],&vnr[1],&ver[2],&vtex[2],&vnr[2]);
+        	//sscanf(line,"f %d//%d %d//%d %d//%d",&ver[0],&vnr[0],&ver[1],&vnr[1],&ver[2],&vnr[2]);
+            f.push_back(new face(ver,vnr,vtex,mId));
 
         }
 
 
     }
+    //print();
 
     in.close();
 }
@@ -249,24 +251,97 @@ void objloader::loadMaterial(const char* mtlname){
 unsigned int objloader::drawModel(){
 
     unsigned int num;
-
+    int prevmtl=-1;
+    int material;
     num=glGenLists(1);
 
     glNewList(num,GL_COMPILE);
+
     	for(int i=0;i<f.size();i++){
 
-    		if(mtl[2]->texId)
+    		material=f[i]->mId;
 
+    		if(material!=prevmtl){
+    			setMaterial(material);
+    			prevmtl=material;
+    		}
+    		if(mtl[material]->texId!=-1){
+    			glEnable(GL_TEXTURE_2D);
+    			glBindTexture(GL_TEXTURE_2D, mtl[material]->texId);
+    		}
+    		else
+    			glDisable(GL_TEXTURE_2D);
 			glBegin(GL_TRIANGLES);
     			for(int j=0;j<3;j++){
     				glNormal3f(normal[f[i]->vn[j]-1]->x,normal[f[i]->vn[j]-1]->y,normal[f[i]->vn[j]-1]->z);
 
+    				if(mtl[material]->texId!=-1)
+    					glTexCoord2f(texture[f[i]->vt[j]-1]->u,texture[f[i]->vt[j]-1]->v);
 
     				glVertex3f(vertex[f[i]->v[j]-1]->x,vertex[f[i]->v[j]-1]->y,vertex[f[i]->v[j]-1]->z);
     			}
             glEnd();
+            if(mtl[material]->texId!=-1)
+            	glBindTexture(GL_TEXTURE_2D,0);
        }
     glEndList();
-
+    clean();
+    displayList.push_back(num);
     return num;
 }
+
+void objloader::setMaterial(int matId){
+	GLfloat mat_amb[4], mat_dif[4],mat_spc[4];
+	for(int i=0;i<3;i++){
+		mat_amb[i]=mtl[matId]->Ka[i];
+		mat_dif[i]=mtl[matId]->Kd[i];
+		mat_spc[i]=mtl[matId]->Ks[i];
+	}
+	mat_amb[3]=1.0;
+	mat_dif[3]=1.0;
+	mat_spc[3]=1.0;
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
+	glMaterialf(GL_FRONT, GL_SHININESS, mtl[matId]->Ns);
+
+}
+
+void objloader::clean(){
+	for(int i=0;i<vertex.size();i++)
+		delete vertex[i];
+	for(int i=0;i<normal.size();i++)
+		delete normal[i];
+	for(int i=0;i<texture.size();i++)
+		delete texture[i];
+	for(int i=0;i<f.size();i++)
+		delete f[i];
+	for(int i=0;i<mtl.size();i++)
+		delete mtl[i];
+
+	vertex.clear();
+	normal.clear();
+	texture.clear();
+	f.clear();
+	mtl.clear();
+}
+
+objloader::~objloader(){
+	for(vector<unsigned int>::const_iterator it=texIdList.begin();it!=texIdList.end();++it)
+		glDeleteTextures(1,&(*it));
+	for(vector<unsigned int>::const_iterator it=displayList.begin();it!=displayList.end();++it)
+		glDeleteLists(*it,1);
+}
+
+void objloader::print(){
+	for(int i=0;i<f.size();i++){
+		for(int j=0;j<3;j++){
+			cout<<f[i]->v[j]<<" ";
+
+		}
+		//cout<<vertex[i]->x<<" "<<vertex[i]->y<<" "<<vertex[i]->z;
+		cout<<endl;
+	}
+}
+
+
