@@ -61,6 +61,8 @@ class objloader{
 		vector<unsigned int>texIdList;
 		vector<unsigned int>displayList;
 
+		char dirname[256];
+
 		unsigned int loadTexture(const char *imgname);
 		void loadMaterial(const char* mtlname);
 		void setMaterial(int matId);

@@ -6,7 +6,7 @@
  */
 
 #include "objloader.h"
-
+#include<new>
 coordinate::coordinate(float a, float b, float c){
 	x=a;
 	y=b;
@@ -37,6 +37,7 @@ material::material(){
 }
 
 unsigned int objloader::loadTexture(const char * imgname){
+
 	/* loading the bmp file */
 	unsigned char header[54];
 	unsigned int dataPos;
@@ -63,8 +64,15 @@ unsigned int objloader::loadTexture(const char * imgname){
         imsize=width*height*3;
     if(dataPos==0)
         dataPos=54;
-    data=new unsigned char [imsize];
 
+
+    data=new (nothrow)unsigned char [imsize];
+    if(data==nullptr){
+    	cout<<"error"<<endl;
+    	exit(1);
+    }
+
+    cout<<imsize<<endl;
     fread(data,1,imsize,file);
 
     fclose(file);
@@ -83,7 +91,7 @@ unsigned int objloader::loadTexture(const char * imgname){
 
     glBindTexture(GL_TEXTURE_2D, texid);
 
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,GL_REPEAT);
@@ -92,7 +100,7 @@ unsigned int objloader::loadTexture(const char * imgname){
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
-    delete data;
+    delete[] data;
 
     texIdList.push_back(texid);
 
@@ -108,6 +116,17 @@ void objloader::loadObj(const char* objname){
         exit(0);
     }
 
+    /*
+     * extract the dirname
+     */
+    int len=strlen(objname);
+    int i;
+
+    for(i=len-1;objname[i]!='/';i--);
+    strcpy(dirname,objname);
+
+    dirname[i+1]='\0';
+
     char line[256];
 
     int mId;
@@ -120,9 +139,12 @@ void objloader::loadObj(const char* objname){
             continue;
 
         else if(line[0]=='m' && line[1]=='t' && line[2]=='l'){
-        	char mtllib[128];
+        	char mtllib[256];
+        	char temp[256];
         	sscanf(line,"mtllib %s",mtllib);
-        	loadMaterial(mtllib);
+        	strcpy(temp,dirname);
+        	strcat(temp,mtllib);
+        	loadMaterial(temp);
 
         }
 
@@ -178,7 +200,7 @@ void objloader::loadMaterial(const char* mtlname){
 	ifstream in(mtlname);
 
 	if(!in.is_open()){
-		cout<<"file can not be open"<<endl;
+		cout<<"file can not be open asdfasdf"<<endl;
 	    exit(0);
 	}
 
@@ -233,14 +255,28 @@ void objloader::loadMaterial(const char* mtlname){
 		}
 
 		else if(line[0]=='m' && line[1]=='a' && line[2]=='p'){
-			char filename[128];
+			char filename[256];
 			if(line[5]=='a')
 				sscanf(line,"map_Ka %s", filename);
 			else if(line[5]=='d')
 				sscanf(line,"map_Kd %s", filename);
 			else if(line[5]=='s')
 				sscanf(line,"map_Ks %s", filename);
-			mtl[id]->texId=loadTexture(filename);
+			/*
+			 *  change extension to bmp if it is jpg/png
+			 */
+			int len;
+			len=strlen(filename);
+			char temp[256];
+			strcpy(temp,dirname);
+			if(filename[len-1]=='g'){
+				filename[len-1]='p';
+				filename[len-2]='m';
+				filename[len-3]='b';
+			}
+			strcat(temp,filename);
+			cout<<temp<<endl;
+			mtl[id]->texId=loadTexture(temp);
 		}
 
 
