@@ -6,9 +6,10 @@
  */
 
 #include "objloader.h"
-
+#include "readwritekeypoints.h"
 #include<cmath>
-/** function definition **/
+/** ***************** function definition *************/
+
 void init();
 void display();
 void reshape(int w, int h);
@@ -17,25 +18,36 @@ void processSpecialKeys(int, int , int);
 void processMouse(int, int , int ,int);
 void processNormalKeys(unsigned char key, int x, int y);
 
-void unProject(int x, int y);
+void unProject();
 void Project();
 
 void capture_frame(unsigned int);
-/** ---------------- ****/
 
-/* global variables*/
+
+/** ----------**********************************------ ****/
+
+/* ************** global variables ********************** */
+
 unsigned int model;// object to render
 static GLfloat spin=0.0;
+
 char *filename;
 char *dirname;
+char *pname;
+
 char *modelno;
+
+char unpFileName[26];
+
 objloader obj;
+
+readwritekeypoints keyobj(0.0, 1.0, 15.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
+
 int mx=0,my=0;
 GLdouble posX=0.0, posY=0.0, posZ=0.0;
 
-float angle=0.0;
-float lx=0.0f,lz=-1.0f;
-float x=0.0f,z=15.0f;
+//float angle=0.0;
+//float lx=0.0f,lz=-1.0f;
 
 bool recording=true;
 unsigned int framenum=0;
@@ -43,9 +55,14 @@ unsigned char *pRGB;
 
 int SCREEN_WIDTH=600;
 int SCREEN_HEIGHT=400;
-/** ***************** **/
+
+
+
+/** ******************************************************************************* **/
+
+
 int main(int argc, char **argv){
-	if(argc !=3){
+	if(argc <3){
 		cout<<"usage: <filename> <imgno> \n";
 		return 1;
 	}
@@ -62,6 +79,15 @@ int main(int argc, char **argv){
 
     init();// initialize openGL
 
+    if(argc==4){
+    	pname=argv[3];
+    	int l;
+    	l=strlen(pname);
+    	if(pname[l-1]=='p')
+    		keyobj.readKeypoints(pname);
+    	else
+    		keyobj.readObjpoints(pname);
+    }
     /* register glut call backs */
 
     glutDisplayFunc(display);
@@ -70,8 +96,10 @@ int main(int argc, char **argv){
     glutMouseFunc(processMouse);
     glutKeyboardFunc(processNormalKeys);
     glutIdleFunc(rotate);
-
+    glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
+                  GLUT_ACTION_GLUTMAINLOOP_RETURNS);
     glutMainLoop();
+    cout<<"hey babe"<<endl;
 
     return 0;
 
@@ -83,9 +111,14 @@ void display(){
     glLoadIdentity();
     glEnable(GL_NORMALIZE);
 
-    gluLookAt(	x, 1.0f, z,
+    /*gluLookAt(	x, 1.0f, z,
     			x+lx, 1.0f,  z+lz,
-    			0.0f, 1.0f,  0.0f);
+    			0.0f, 1.0f,  0.0f);*/
+
+    gluLookAt(keyobj.eyex, keyobj.eyey, keyobj.eyez,
+    		keyobj.lx+keyobj.eyex, 1.0, keyobj.lz+keyobj.eyez,
+			keyobj.upx, keyobj.upy, keyobj.upz);
+
 
     /* Opengl light */
     GLfloat pos0[]={0.0,100.0,0.0,0.0};
@@ -129,8 +162,8 @@ void display(){
 }
 
 void init(){
-    //glClearColor(1.0f,1.0f,1.0f,1.0f);// white background
-    glClearColor(0.0f,0.0f,0.0f,0.0f);//black background
+    glClearColor(1.0f,1.0f,1.0f,1.0f);// white background
+   // glClearColor(0.0f,0.0f,0.0f,0.0f);//black background
     glShadeModel(GL_SMOOTH);
 
     glEnable(GL_DEPTH_TEST);
@@ -153,22 +186,22 @@ void init(){
     glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT1,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT0,GL_AMBIENT,col1);
+    glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT2,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
 
-    glLightfv(GL_LIGHT3,GL_DIFFUSE,col1);
-    glLightfv(GL_LIGHT3,GL_AMBIENT,col1);
+    glLightfv(GL_LIGHT3,GL_DIFFUSE,col0);
+    glLightfv(GL_LIGHT3,GL_AMBIENT,col0);
 
-    glLightfv(GL_LIGHT4,GL_DIFFUSE,col3);
-    glLightfv(GL_LIGHT4,GL_AMBIENT,col3);
+    glLightfv(GL_LIGHT4,GL_DIFFUSE,col0);
+    glLightfv(GL_LIGHT4,GL_AMBIENT,col1);
 
     glLightfv(GL_LIGHT5,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT5,GL_AMBIENT,col0);
+    glLightfv(GL_LIGHT5,GL_AMBIENT,col2);
 
-    glLightfv(GL_LIGHT6,GL_DIFFUSE,col2);
-    glLightfv(GL_LIGHT6,GL_AMBIENT,col2);
+    glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
+    glLightfv(GL_LIGHT6,GL_AMBIENT,col3);
 
     glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
@@ -197,28 +230,30 @@ void rotate(void){
     glutPostRedisplay();
 
 }
+
 void processSpecialKeys(int key, int xx, int yy) {
 
 	float fraction = 0.1f;
 
 	switch (key) {
 		case GLUT_KEY_LEFT :
-			angle -= 0.01f;
-			lx = sin(angle);
-			lz = -cos(angle);
+			keyobj.angle -= 0.01f;
+			keyobj.lx = sin(keyobj.angle);
+			keyobj.lz = -cos(keyobj.angle);
 			break;
 		case GLUT_KEY_RIGHT :
-			angle += 0.01f;
-			lx = sin(angle);
-			lz = -cos(angle);
+			keyobj.angle += 0.01f;
+			keyobj.lx = sin(keyobj.angle);
+			keyobj.lz = -cos(keyobj.angle);
 			break;
 		case GLUT_KEY_UP :
-			x += lx * fraction;
-			z += lz * fraction;
+			keyobj.eyex += keyobj.lx * fraction;
+			keyobj.eyez += keyobj.lz * fraction;
 			break;
 		case GLUT_KEY_DOWN :
-			x -= lx * fraction;
-			z -= lz * fraction;
+			keyobj.eyex -= keyobj.lx * fraction;
+			keyobj.eyez -= keyobj.lz * fraction;
+
 			break;
 	}
 }
@@ -232,35 +267,67 @@ void processMouse(int button, int state, int x, int y){
 }
 
 void processNormalKeys(unsigned char key, int x, int y){
+
 	if(key=='u'){
-		capture_frame(framenum++);
-		unProject(mx,my);
-		//capture_frame(framenum++);
+
+		unProject();
+
+		sprintf(unpFileName,"./frame/%s_frame_%04d.u",modelno,framenum);
+		keyobj.writeObjpoints(unpFileName);
+		framenum++;
+
 	}
+
 	else if(key=='p'){
 		Project();
-		capture_frame(framenum++);
+		capture_frame(framenum);
+		char mystr[256];
+		sprintf(mystr,"./frame/%s_frame_%04d.p",modelno,framenum);
+		keyobj.writeKeypoints(mystr);
+		framenum++;
+	}
+
+	else if(key=='c'){
+		capture_frame(framenum);
+		char mystr[256];
+		sprintf(mystr,"./frame/%s_frame_%04d.p",modelno,framenum);
+		keyobj.writeKeypoints(mystr);
+		glutLeaveMainLoop();
+	}
+
+	else if(key=='q'){
+		glutLeaveMainLoop();
 	}
 
 }
 
-void unProject(int x, int y){
+void unProject(){
 	GLint viewport[4];
 	GLdouble modelview[16];
 	GLdouble projection[16];
 	GLfloat winX, winY, winZ;
+	float x,y;
 
 	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
 
-	winX = (float)x;
-	winY = (float)viewport[3] - (float)y;
-	glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
+	for(int i=0;i<keyobj.keypoints.size();i++){
+		x=keyobj.keypoints[i]->x;
+		y=keyobj.keypoints[i]->y;
 
-	gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+		winX = (float)x;
+		winY = (float)viewport[3] - (float)y;
+		glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
 
-	cout<<posX<<" "<<posY<<" "<<posZ<<endl;
+		gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+
+		keyobj.objpoints.push_back(new unprojectedKey(posX,posY,posZ));
+	}
+	//cout<<keyobj.keypoints.size()<<" "<<keyobj.objpoints.size()<<endl;
+	for(int i=0;i<keyobj.keypoints.size();i++)
+		delete keyobj.keypoints[i];
+	keyobj.keypoints.clear();
 
 }
 
@@ -274,9 +341,15 @@ void Project(){
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
 
-	gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
-	winY = (double)viewport[3] - winY;
-	cout<<winX<<" "<<winY<<endl;
+	for(int i=0;i<keyobj.objpoints.size();i++){
+		posX=keyobj.objpoints[i]->x;
+		posY=keyobj.objpoints[i]->y;
+		posZ=keyobj.objpoints[i]->z;
+
+		gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
+		winY = (double)viewport[3] - winY;
+		keyobj.keypoints.push_back(new projectedKey(winX,winY));
+	}
 }
 
 void capture_frame(unsigned int framenum){
