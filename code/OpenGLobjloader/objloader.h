@@ -26,6 +26,7 @@ using namespace std;
 struct coordinate{
     float x,y,z;
     coordinate(float a, float b, float c);
+    coordinate();
 };
 
 struct uvcoordinate{
@@ -61,18 +62,23 @@ class objloader{
 		vector<unsigned int>texIdList;
 		vector<unsigned int>displayList;
 
+		coordinate min,max;
+
 		char dirname[256];
 
 		unsigned int loadTexture(const char *imgname);
 		void loadMaterial(const char* mtlname);
 		void setMaterial(int matId);
 		void clean();
+		void findCenterOfBody();
+		void findMinMax(float x, float y, float z);
+
 
 	public:
+		coordinate *center_of_body;
 		~objloader();
 	 	void loadObj(const char* objname);
 	 	unsigned int drawModel();
-	 	void print();
 };
 
 

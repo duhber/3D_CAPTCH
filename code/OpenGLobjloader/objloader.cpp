@@ -12,7 +12,11 @@ coordinate::coordinate(float a, float b, float c){
 	y=b;
 	z=c;
 }
-
+coordinate::coordinate(){
+	x=0.0;
+	y=0.0;
+	z=0.0;
+}
 uvcoordinate::uvcoordinate(float a, float b){
 	u=a;
 	v=b;
@@ -131,6 +135,13 @@ void objloader::loadObj(const char* objname){
 
     int mId;
 
+    min.x=999999.9f;
+    min.y=999999.9f;
+    min.z=999999.9f;
+    max.x=-999999.9f;
+    max.y=-999999.9f;
+    max.z=-999999.9f;
+
     while(!in.eof()){
 
         in.getline(line,256);
@@ -159,8 +170,9 @@ void objloader::loadObj(const char* objname){
 
             float x, y, z;
             sscanf(line,"v %f %f %f",&x, &y, &z);
-            vertex.push_back(new coordinate(x,y,z));
 
+            vertex.push_back(new coordinate(x,y,z));
+            findMinMax(x,y,z);
         }
 
 	    else if(line[0]=='v' && line[1]=='n'){
@@ -190,7 +202,7 @@ void objloader::loadObj(const char* objname){
 
 
     }
-    //print();
+    findCenterOfBody();
 
     in.close();
 }
@@ -282,6 +294,7 @@ void objloader::loadMaterial(const char* mtlname){
 
 	}
 
+
 }
 
 unsigned int objloader::drawModel(){
@@ -369,15 +382,26 @@ objloader::~objloader(){
 		glDeleteLists(*it,1);
 }
 
-void objloader::print(){
-	for(int i=0;i<f.size();i++){
-		for(int j=0;j<3;j++){
-			cout<<f[i]->v[j]<<" ";
+void objloader::findMinMax(float fx, float fy, float fz){
+	if(fx<min.x)
+		min.x=fx;
+	else if(fx>max.x)
+		max.x=fx;
+	if(fy<min.y)
+		min.y=fy;
+	else if(fy>max.y)
+		max.y=fy;
+	if(fz<min.z)
+		min.z=fz;
+	else if(fz>max.z)
+		max.z=fz;
 
-		}
-		//cout<<vertex[i]->x<<" "<<vertex[i]->y<<" "<<vertex[i]->z;
-		cout<<endl;
-	}
+
 }
 
+void objloader::findCenterOfBody(){
+	cout<<max.y<<" "<<min.y<<endl;
 
+	center_of_body=new coordinate((max.x+min.x)/2,(max.y+min.y)/2,(max.z+min.z)/2);
+	cout<<center_of_body->x<<" "<<center_of_body->y<<" "<<center_of_body->z<<endl;
+}

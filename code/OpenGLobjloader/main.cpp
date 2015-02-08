@@ -41,8 +41,8 @@ bool recording=true;
 unsigned int framenum=0;
 unsigned char *pRGB;
 
-int SCREEN_WIDTH=800;
-int SCREEN_HEIGHT=600;
+int SCREEN_WIDTH=600;
+int SCREEN_HEIGHT=400;
 /** ***************** **/
 int main(int argc, char **argv){
 	if(argc !=3){
@@ -55,9 +55,9 @@ int main(int argc, char **argv){
     /* Initialize glut */
     glutInit(&argc, argv);
 
-    glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH|GLUT_MULTISAMPLE);
     glutInitWindowPosition(100,100);
-    glutInitWindowSize(800,600);
+    glutInitWindowSize(600,400);
     glutCreateWindow("Perspective's GLUT Template");
 
     init();// initialize openGL
@@ -109,15 +109,20 @@ void display(){
     GLfloat pos6[]={0.0,0.0,-100.0,0.0};
     glLightfv(GL_LIGHT6,GL_POSITION,pos6);
 
-         /* render scene here */
+    /* multisampling parameters
+    GLint	iMultiSample	= 0;
+    GLint	iNumSamples		= 0;
+    glGetIntegerv(GL_SAMPLE_BUFFERS, &iMultiSample);
+    glGetIntegerv(GL_SAMPLES, &iNumSamples);
 
-    glPushMatrix();
-    	//glRotatef(spin,0.0,1.0,0.0);
-        glTranslatef(0.0,-2.0,0.0);
-    	//glScalef(0.025,0.025,0.025);
+    cout<<iMultiSample<<" "<<iNumSamples<<endl;
+	*/
 
-        glCallList(model);
-    glPopMatrix();
+    /* *******************render scene here ***************************/
+    glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y,-obj.center_of_body->z);
+
+    glCallList(model);
+
 
     /** ---------------- **/
     glutSwapBuffers();
@@ -164,6 +169,9 @@ void init(){
 
     glLightfv(GL_LIGHT6,GL_DIFFUSE,col2);
     glLightfv(GL_LIGHT6,GL_AMBIENT,col2);
+
+    glEnable(GL_MULTISAMPLE);
+    glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 
     obj.loadObj(filename);
     model=obj.drawModel();
