@@ -56,6 +56,7 @@ unsigned char *pRGB;
 int SCREEN_WIDTH=600;
 int SCREEN_HEIGHT=400;
 
+bool isUnProject=true;
 
 
 /** ******************************************************************************* **/
@@ -83,8 +84,10 @@ int main(int argc, char **argv){
     	pname=argv[3];
     	int l;
     	l=strlen(pname);
-    	if(pname[l-1]=='p')
+    	if(pname[l-1]=='p'){
     		keyobj.readKeypoints(pname);
+    		isUnProject=false;
+    	}
     	else
     		keyobj.readObjpoints(pname);
     }
@@ -156,7 +159,19 @@ void display(){
 
     glCallList(model);
 
+    if(!isUnProject){
+    	unProject();
 
+    	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
+    	keyobj.writeObjpoints(unpFileName);
+    	framenum++;
+    	isUnProject=true;
+    }
+
+    if(framenum==6){
+    	glutLeaveMainLoop();
+
+    }
     /** ---------------- **/
     glutSwapBuffers();
 }
@@ -270,11 +285,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 
 	if(key=='u'){
 
-		unProject();
 
-		sprintf(unpFileName,"./frame/%s_frame_%04d.u",modelno,framenum);
-		keyobj.writeObjpoints(unpFileName);
-		framenum++;
 
 	}
 
@@ -282,7 +293,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 		Project();
 		capture_frame(framenum);
 		char mystr[256];
-		sprintf(mystr,"./frame/%s_frame_%04d.p",modelno,framenum);
+		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
 		keyobj.writeKeypoints(mystr);
 		framenum++;
 	}
@@ -290,7 +301,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 	else if(key=='c'){
 		capture_frame(framenum);
 		char mystr[256];
-		sprintf(mystr,"./frame/%s_frame_%04d.p",modelno,framenum);
+		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
 		keyobj.writeKeypoints(mystr);
 		glutLeaveMainLoop();
 	}
@@ -366,7 +377,7 @@ void capture_frame(unsigned int framenum){
 
   glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pRGB);
   char framename[200];
-  sprintf(framename,"./frame/%s_frame_%04d.ppm",modelno,framenum);
+  sprintf(framename,"%s/frame_%04d.ppm",modelno,framenum);
   std::ofstream out(framename, std::ios::out);
   out<<"P6"<<std::endl;
   out<<SCREEN_WIDTH<<" "<<SCREEN_HEIGHT<<" 255"<<std::endl;
