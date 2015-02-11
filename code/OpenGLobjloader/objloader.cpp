@@ -3,10 +3,12 @@
  *
  *  Created on: 26-Jan-2015
  *      Author: duhber
+ *
  */
 
 #include "objloader.h"
 #include<new>
+#include<stack>
 coordinate::coordinate(float a, float b, float c){
 	x=a;
 	y=b;
@@ -318,7 +320,7 @@ unsigned int objloader::drawModel(){
     			glEnable(GL_TEXTURE_2D);
     			glBindTexture(GL_TEXTURE_2D, mtl[material]->texId);
     		}
-    		else
+    		//else
     			glDisable(GL_TEXTURE_2D);
 			glBegin(GL_TRIANGLES);
     			for(int j=0;j<3;j++){
