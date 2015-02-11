@@ -285,10 +285,12 @@ void processNormalKeys(unsigned char key, int x, int y){
 
 	if(key=='u'){
 
-
+		//glDisable(GL_TEXTURE_2D);
 
 	}
-
+	else if(key=='d'){
+		keyobj.eyey-=0.01;
+	}
 	else if(key=='p'){
 		Project();
 		capture_frame(framenum);
