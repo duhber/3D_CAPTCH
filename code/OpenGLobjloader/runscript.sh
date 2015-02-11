@@ -2,12 +2,12 @@
 
 dir=$2
 
-while  [ -d "./frame/$dir" ]
+while  [ -d "../frame/$dir" ]
 do
     dir=$((dir+1))
 done
 
-dir2="./frame/$dir"
+dir2="../frame/$dir"
 
 mkdir $dir2
 
