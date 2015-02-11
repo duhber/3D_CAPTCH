@@ -26,11 +26,12 @@ clear all;
     r=25; %radius of toleramce
     
     count=0;
+    correct=0;
     
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model=1009:1009%1001:numModel+1000
+for model=1001:1001%1001:numModel+1000
     
     for frame1=0:0
         
@@ -40,7 +41,7 @@ for model=1009:1009%1001:numModel+1000
             continue;
         end
         
-        for frame2=3:3%frame1+1:1
+        for frame2=1:1%frame1+1:1
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -96,7 +97,7 @@ for model=1009:1009%1001:numModel+1000
                     
                 end
                 
-                
+                count=count+1;
                 %%%%%%%%%%%% motion estimation test %%%%%%%%%%%%%%%%%%%%%%
               
                 point_track=Motion_est*[x1;y1;1];
@@ -111,7 +112,7 @@ for model=1009:1009%1001:numModel+1000
                 if(N>=4 && inliers>=4)
                     if ((x_truth-r<=x_track && x_track<=x_truth+r) && (y_truth-r<=y_track && y_track<=y_truth+r))
                         %disp('motion estimation');
-                        count=count+1;
+                        correct=correct+1;
                     end
                 end
                 
@@ -125,6 +126,7 @@ end
 
 count
 
+correct
 
 
 
