@@ -19,13 +19,16 @@ unprojectedKey::unprojectedKey(float sx, float sy, float sz){
 	z=sz;
 }
 
-readwritekeypoints::readwritekeypoints(float x, float y, float z, float theta, float llx, float llz, float ux, float uy, float uz){
+readwritekeypoints::readwritekeypoints(float x, float y, float z, float angle1, float angle2, float llx, float lly, float llz, float ux, float uy, float uz){
 	eyex=x;
 	eyey=y;
 	eyez=z;
 
-	angle=theta;
+	theta=angle1;
+	phi=angle2;
+
 	lx=llx;
+	ly=lly;
 	lz=llz;
 
 	upx=ux;
@@ -47,7 +50,7 @@ void readwritekeypoints::readKeypoints(const char* filename){
 		in.getline(line, 256);
 		//cout<<i<<" "<<line<<endl;
 		if(line[0]=='#'){
-			sscanf(line,"# %f %f %f %f %f %f %f %f %f ",&eyex, &eyey, &eyez, &angle, &lx, &lz, &upx, &upy, &upz);
+			sscanf(line,"# %f %f %f %f %f %f %f %f %f %f %f ",&eyex, &eyey, &eyez, &theta, &phi, &lx, &ly, &lz, &upx, &upy, &upz);
 		}
 
 		else if(strlen(line)>0){
@@ -76,7 +79,7 @@ void readwritekeypoints::readObjpoints(const char* filename){
 		in.getline(line, 256);
 
 		if(line[0]=='#'){
-			sscanf(line,"# %f %f %f %f %f %f %f %f %f ",&eyex, &eyey, &eyez, &angle, &lx, &lz, &upx, &upy, &upz);
+			sscanf(line,"# %f %f %f %f %f %f %f %f %f %f %f ",&eyex, &eyey, &eyez, &theta, &phi, &lx, &ly, &lz, &upx, &upy, &upz);
 		}
 
 		else if(strlen(line)>0){
@@ -97,7 +100,9 @@ void readwritekeypoints::writeKeypoints(const char* filename){
 
 		out<<"# "<<eyex<<" "<<eyey<<" "<<eyez<<" ";
 
-		out<<angle<<" "<<lx<<" "<<lz<<" ";
+		out<<theta<<" "<<phi<<" ";
+
+		out<<lx<<" "<<ly<<" "<<lz<<" ";
 
 		out<<upx<<" "<<upy<<" "<<upz<<"\n";
 
@@ -122,7 +127,9 @@ void readwritekeypoints::writeObjpoints(const char* filename){
 
 		out<<"# "<<eyex<<" "<<eyey<<" "<<eyez<<" ";
 
-		out<<angle<<" "<<lx<<" "<<lz<<" ";
+		out<<theta<<" "<<phi<<" ";
+
+		out<<lx<<" "<<ly<<" "<<lz<<" ";
 
 		out<<upx<<" "<<upy<<" "<<upz<<"\n";
 

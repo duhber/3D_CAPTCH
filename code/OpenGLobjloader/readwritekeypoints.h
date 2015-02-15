@@ -27,13 +27,13 @@ struct unprojectedKey{
 
 class readwritekeypoints{
 public:
-	readwritekeypoints(float, float, float, float, float, float, float, float, float);
+	readwritekeypoints(float, float, float, float, float, float, float, float, float, float, float);
 	~readwritekeypoints();
 
 	vector<projectedKey*>keypoints;
 	vector<unprojectedKey*>objpoints;
 
-	float eyex, eyey, eyez, angle, lx, lz, upx, upy, upz;
+	float eyex, eyey, eyez, theta, phi, lx, ly, lz, upx, upy, upz;
 
 	void readKeypoints(const char *);
 	void readObjpoints(const char *);

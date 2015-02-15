@@ -41,13 +41,10 @@ char unpFileName[26];
 
 objloader obj;
 
-readwritekeypoints keyobj(0.0, 1.0, 15.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
+readwritekeypoints keyobj(0.0, 1.0, 15.0, 0.0, 90.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
 
 int mx=0,my=0;
 GLdouble posX=0.0, posY=0.0, posZ=0.0;
-
-//float angle=0.0;
-//float lx=0.0f,lz=-1.0f;
 
 bool recording=true;
 unsigned int framenum=0;
@@ -119,7 +116,7 @@ void display(){
     			0.0f, 1.0f,  0.0f);*/
 
     gluLookAt(keyobj.eyex, keyobj.eyey, keyobj.eyez,
-    		keyobj.lx+keyobj.eyex, 1.0, keyobj.lz+keyobj.eyez,
+    		keyobj.lx+keyobj.eyex, keyobj.ly+keyobj.eyey, keyobj.lz+keyobj.eyez,
 			keyobj.upx, keyobj.upy, keyobj.upz);
 
 
@@ -251,22 +248,39 @@ void processSpecialKeys(int key, int xx, int yy) {
 	float fraction = 0.1f;
 
 	switch (key) {
+
+		case GLUT_KEY_PAGE_UP:
+			keyobj.phi-=0.01f;
+			keyobj.ly=cos(keyobj.phi);
+			keyobj.lx = sin(keyobj.theta)*sin(keyobj.phi);
+			keyobj.lz = -cos(keyobj.theta)*sin(keyobj.phi);
+			break;
+
+		case GLUT_KEY_PAGE_DOWN:
+			keyobj.phi+=0.01f;
+			keyobj.ly=cos(keyobj.phi);
+			keyobj.lx = sin(keyobj.theta)*sin(keyobj.phi);
+			keyobj.lz = -cos(keyobj.theta)*sin(keyobj.phi);
+			break;
+
 		case GLUT_KEY_LEFT :
-			keyobj.angle -= 0.01f;
-			keyobj.lx = sin(keyobj.angle);
-			keyobj.lz = -cos(keyobj.angle);
+			keyobj.theta -= 0.01f;
+			keyobj.lx = sin(keyobj.theta)*sin(keyobj.phi);
+			keyobj.lz = -cos(keyobj.theta)*sin(keyobj.phi);
 			break;
 		case GLUT_KEY_RIGHT :
-			keyobj.angle += 0.01f;
-			keyobj.lx = sin(keyobj.angle);
-			keyobj.lz = -cos(keyobj.angle);
+			keyobj.theta += 0.01f;
+			keyobj.lx = sin(keyobj.theta)*sin(keyobj.phi);
+			keyobj.lz = -cos(keyobj.theta)*sin(keyobj.phi);
 			break;
 		case GLUT_KEY_UP :
 			keyobj.eyex += keyobj.lx * fraction;
+			keyobj.eyey += keyobj.ly * fraction;
 			keyobj.eyez += keyobj.lz * fraction;
 			break;
 		case GLUT_KEY_DOWN :
 			keyobj.eyex -= keyobj.lx * fraction;
+			keyobj.eyey += keyobj.ly * fraction;
 			keyobj.eyez -= keyobj.lz * fraction;
 
 			break;
@@ -285,7 +299,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 
 	if(key=='u'){
 
-		//glDisable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_2D);
 
 	}
 	else if(key=='d'){
