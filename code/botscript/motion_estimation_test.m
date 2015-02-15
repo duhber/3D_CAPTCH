@@ -18,7 +18,7 @@ close all;
 clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                              GLOBAL VARIABLES
+%                              INITIALIZE VARIABLES
     numModel=1;
     
     modelDir='../frame/%d/frame_000%d.';
@@ -27,6 +27,7 @@ clear all;
     
     count=0;
     correct=0;
+    
     
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,7 +42,7 @@ for model=1001:1001%1001:numModel+1000
             continue;
         end
         
-        for frame2=1:1%frame1+1:1
+        for frame2=5:5%frame1+1:1
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -55,8 +56,8 @@ for model=1001:1001%1001:numModel+1000
             
             I2=imread(f2);
             
-            figure, imshow(I1);
-            figure, imshow(I2);
+%             figure, imshow(I1);
+%             figure, imshow(I2);
             
             H=size(I1,1);% height of image
             W=size(I1,2);% width of image
@@ -80,9 +81,12 @@ for model=1001:1001%1001:numModel+1000
             
             numpoints=size(frameKeyPoints1,1);
             
-            
-            
-            
+            truthPoints=size(numpoints,2);
+            trackPoints=size(numpoints,2);
+%             
+             I3=affineWarp(I1,inv(Motion_est));
+             figure, imshow(I3);
+%             
             for pointI=1:numpoints
                 
                 x1=frameKeyPoints1(pointI,1);
@@ -113,6 +117,9 @@ for model=1001:1001%1001:numModel+1000
                     if ((x_truth-r<=x_track && x_track<=x_truth+r) && (y_truth-r<=y_track && y_track<=y_truth+r))
                         %disp('motion estimation');
                         correct=correct+1;
+                        
+                        truthPoints(correct,1:2)=[x1 y1];
+                        trackPoints(correct,1:2)=[x_track y_track];
                     end
                 end
                 
@@ -124,12 +131,16 @@ for model=1001:1001%1001:numModel+1000
     
 end
 
-count
+disp(count);
+disp(correct);
 
-correct
+figure, imshow(I1);
+hold on
+plot(truthPoints(:,1), truthPoints(:,2),'og');
 
-
-
+figure, imshow(I2);
+hold on
+plot(trackPoints(:,1), trackPoints(:,2),'og');
 
 
 
