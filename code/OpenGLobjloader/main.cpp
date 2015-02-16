@@ -41,7 +41,7 @@ char unpFileName[26];
 
 objloader obj;
 
-readwritekeypoints keyobj(0.0, 1.0, 15.0, 0.0, 90.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
+readwritekeypoints keyobj(0.0, 4.0, 15.0, 0.0, 90.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
 
 int mx=0,my=0;
 GLdouble posX=0.0, posY=0.0, posZ=0.0;
@@ -66,6 +66,20 @@ int main(int argc, char **argv){
 	}
     filename=argv[1];
     modelno=argv[2];
+
+    if(argc==4){
+        pname=argv[3];
+        int l;
+        l=strlen(pname);
+        if(pname[l-1]=='p'){
+        	keyobj.readKeypoints(pname);
+        	isUnProject=false;
+        	obj.includeTexture=false;
+        }
+
+        else
+        	exit(0);
+    }
     /**********************************************/
     /* Initialize glut */
     glutInit(&argc, argv);
@@ -77,17 +91,7 @@ int main(int argc, char **argv){
 
     init();// initialize openGL
 
-    if(argc==4){
-    	pname=argv[3];
-    	int l;
-    	l=strlen(pname);
-    	if(pname[l-1]=='p'){
-    		keyobj.readKeypoints(pname);
-    		isUnProject=false;
-    	}
-    	else
-    		keyobj.readObjpoints(pname);
-    }
+
     /* register glut call backs */
 
     glutDisplayFunc(display);
@@ -280,7 +284,7 @@ void processSpecialKeys(int key, int xx, int yy) {
 			break;
 		case GLUT_KEY_DOWN :
 			keyobj.eyex -= keyobj.lx * fraction;
-			keyobj.eyey += keyobj.ly * fraction;
+			keyobj.eyey -= keyobj.ly * fraction;
 			keyobj.eyez -= keyobj.lz * fraction;
 
 			break;
