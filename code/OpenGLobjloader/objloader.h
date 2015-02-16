@@ -77,6 +77,8 @@ class objloader{
 
 	public:
 		coordinate *center_of_body;
+		bool includeTexture;
+		objloader();
 		~objloader();
 	 	void loadObj(const char* objname);
 	 	unsigned int drawModel();

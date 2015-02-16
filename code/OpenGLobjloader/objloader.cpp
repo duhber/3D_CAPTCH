@@ -42,6 +42,10 @@ material::material(){
 	Ns=0.0;
 }
 
+objloader::objloader(){
+	includeTexture=true;
+}
+
 unsigned int objloader::loadTexture(const char * imgname){
 
 	/* loading the bmp file */
@@ -316,11 +320,11 @@ unsigned int objloader::drawModel(){
     			setMaterial(material);
     			prevmtl=material;
     		}
-    		if(mtl[material]->texId!=-1){
+    		if(mtl[material]->texId!=-1 && includeTexture){
     			glEnable(GL_TEXTURE_2D);
     			glBindTexture(GL_TEXTURE_2D, mtl[material]->texId);
     		}
-    		//else
+    		else
     			glDisable(GL_TEXTURE_2D);
 			glBegin(GL_TRIANGLES);
     			for(int j=0;j<3;j++){
@@ -332,7 +336,7 @@ unsigned int objloader::drawModel(){
     				glVertex3f(vertex[f[i]->v[j]-1]->x,vertex[f[i]->v[j]-1]->y,vertex[f[i]->v[j]-1]->z);
     			}
             glEnd();
-            if(mtl[material]->texId!=-1)
+            if(mtl[material]->texId!=-1 && includeTexture)
             	glBindTexture(GL_TEXTURE_2D,0);
        }
     glEndList();
