@@ -76,6 +76,7 @@ class objloader{
 
 
 	public:
+		float dimension[3];
 		coordinate *center_of_body;
 		bool includeTexture;
 		objloader();

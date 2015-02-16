@@ -43,7 +43,7 @@ material::material(){
 }
 
 objloader::objloader(){
-	includeTexture=true;
+	includeTexture=false;
 }
 
 unsigned int objloader::loadTexture(const char * imgname){
@@ -409,5 +409,11 @@ void objloader::findCenterOfBody(){
 	cout<<max.y<<" "<<min.y<<endl;
 
 	center_of_body=new coordinate((max.x+min.x)/2,(max.y+min.y)/2,(max.z+min.z)/2);
-	cout<<center_of_body->x<<" "<<center_of_body->y<<" "<<center_of_body->z<<endl;
+	dimension[0]=max.x-min.x;
+	dimension[1]=max.y-min.y;
+	dimension[2]=max.z-min.z;
+
+	for(int i=0;i<3;i++)
+		cout<<i<<" "<<dimension[i]<<" ";
+	cout<<endl;
 }
