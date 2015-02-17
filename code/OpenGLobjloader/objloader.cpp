@@ -43,7 +43,7 @@ material::material(){
 }
 
 objloader::objloader(){
-	includeTexture=false;
+	includeTexture=true;
 }
 
 unsigned int objloader::loadTexture(const char * imgname){

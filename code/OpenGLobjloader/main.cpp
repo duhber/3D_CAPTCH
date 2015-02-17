@@ -3,6 +3,23 @@
  *
  *  Created on: 26-Jan-2015
  *      Author: duhber
+ *
+ *      IMPORTANT KEYS:
+ *	--> : turn right
+ *	<-- : turn left
+ *	up arrow: move forward
+ *	dowm arrow: move backward
+ *
+ *	c   : capture frame before unproject
+ *	p   : capture frame after unproject
+ *
+ *	q   : exit
+ *
+ *	w   : place model2 on neg z-axis
+ *	s   : place nodel2 on pos z-axis
+ *	a   : place model2 on neg x-axis
+ *	d   : place model2 on pos x-axis
+ *
  */
 
 #include "objloader.h"
@@ -21,17 +38,19 @@ void processNormalKeys(unsigned char key, int x, int y);
 void unProject();
 void Project();
 
+void setPosition(unsigned char pos);
+
 void capture_frame(unsigned int);
 
-
+void cameraMotion(int value);
 /** ----------**********************************------ ****/
 
 /* ************** global variables ********************** */
 
-unsigned int model;// object to render
+unsigned int model1, model2;// object to render
 static GLfloat spin=0.0;
 
-char *filename;
+char *filename1, *filename2;
 char *dirname;
 char *pname;
 
@@ -39,9 +58,11 @@ char *modelno;
 
 char unpFileName[26];
 
-objloader obj;
+objloader obj,obj2;
 
-readwritekeypoints keyobj(0.0, 4.0, 15.0, 0.0, 90.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
+float R;
+
+readwritekeypoints keyobj(0.0, 10.0, 15.0, 0.0, 90.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
 
 int mx=0,my=0;
 GLdouble posX=0.0, posY=0.0, posZ=0.0;
@@ -56,25 +77,30 @@ int SCREEN_HEIGHT=400;
 bool isUnProject=true;
 
 
+float position[3];// position for model2
+
+float  d12=0.5; // distance between model 1 and model 2
 /** ******************************************************************************* **/
 
 
 int main(int argc, char **argv){
-	if(argc <3){
-		cout<<"usage: <filename> <imgno> \n";
+	if(argc <4){
+		cout<<"usage: <filename1> <filename2> <imgno> \n";
 		return 1;
 	}
-    filename=argv[1];
-    modelno=argv[2];
+    filename1=argv[1];
+    filename2=argv[2];
+    modelno=argv[3];
 
-    if(argc==4){
-        pname=argv[3];
+    if(argc==5){
+        pname=argv[4];
         int l;
         l=strlen(pname);
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
         	isUnProject=false;
-        	obj.includeTexture=false;
+        	obj.includeTexture=true;
+        	obj2.includeTexture=true;
         }
 
         else
@@ -156,9 +182,30 @@ void display(){
 	*/
 
     /* *******************render scene here ***************************/
-    glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y,-obj.center_of_body->z);
+    glPushMatrix();
+    	glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y+(obj.dimension[1])/2,-obj.center_of_body->z);
 
-    glCallList(model);
+    	if(obj.dimension[0]<obj.dimension[2]){
+    		glTranslatef(obj.center_of_body->x,obj.center_of_body->y,obj.center_of_body->z);
+    		glRotatef(90.0,0,1,0);
+    		glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y,-obj.center_of_body->z);
+    	}
+
+
+    	glCallList(model1);
+    glPopMatrix();
+    glPushMatrix();
+
+    	glTranslatef(position[0],position[1]+(obj2.dimension[1])/2,position[2]);
+
+    	if(obj2.dimension[0]<obj2.dimension[2]){
+    	    glTranslatef(obj2.center_of_body->x,obj2.center_of_body->y,obj2.center_of_body->z);
+    	    glRotatef(90.0,0,1,0);
+    	    glTranslatef(-obj2.center_of_body->x,-obj2.center_of_body->y,-obj2.center_of_body->z);
+    	}
+    	glCallList(model2);
+    glPopMatrix();
+
 
     if(!isUnProject){
     	unProject();
@@ -178,8 +225,8 @@ void display(){
 }
 
 void init(){
-    glClearColor(1.0f,1.0f,1.0f,1.0f);// white background
-   // glClearColor(0.0f,0.0f,0.0f,0.0f);//black background
+    //glClearColor(1.0f,1.0f,1.0f,1.0f);// white background
+    glClearColor(0.0f,0.0f,0.0f,0.0f);//black background
     glShadeModel(GL_SMOOTH);
 
     glEnable(GL_DEPTH_TEST);
@@ -222,8 +269,14 @@ void init(){
     glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 
-    obj.loadObj(filename);
-    model=obj.drawModel();
+    obj.loadObj(filename1);
+    model1=obj.drawModel();
+    obj2.loadObj(filename2);
+    model2=obj2.drawModel();
+    setPosition('d');
+
+    R=*max_element(obj.dimension,obj.dimension+3);
+
 }
 
 void reshape(int w, int h){
@@ -301,14 +354,29 @@ void processMouse(int button, int state, int x, int y){
 
 void processNormalKeys(unsigned char key, int x, int y){
 
-	if(key=='u'){
+	if(key=='w'){
 
-		glDisable(GL_TEXTURE_2D);
+		setPosition('w');
 
 	}
+	else if(key=='a'){
+
+		setPosition('a');
+	}
+	else if(key=='s'){
+
+		setPosition('s');
+	}
+
 	else if(key=='d'){
-		keyobj.eyey-=0.01;
+
+		setPosition('d');
 	}
+	else if(key=='r'){
+		glutTimerFunc(100,cameraMotion, 0);
+		//cameraMotion();
+	}
+
 	else if(key=='p'){
 		Project();
 		capture_frame(framenum);
@@ -406,4 +474,60 @@ void capture_frame(unsigned int framenum){
 
   //function to store pRGB in a file named count
   delete [] pRGB;
+}
+
+void setPosition(unsigned char pos){
+	float lenx,lenz;
+
+	lenx=obj2.dimension[0];
+	lenz=obj2.dimension[2];
+
+	if(obj2.dimension[0]<obj2.dimension[2]){
+
+	    	float temp;
+	    	temp=lenx;
+	    	lenx=lenz;
+	    	lenz=temp;
+	}
+
+	if(pos=='d'){
+		position[0]=-obj2.center_of_body->x+(obj.dimension[0])/2+d12+(lenx)/2;
+		position[1]=-obj2.center_of_body->y;
+		position[2]=-obj2.center_of_body->z;
+	}
+	else if(pos=='a'){
+		position[0]=-obj2.center_of_body->x-((obj.dimension[0])/2+d12+(lenx)/2);
+		position[1]=-obj2.center_of_body->y;
+		position[2]=-obj2.center_of_body->z;
+	}
+	else if(pos=='w'){
+		position[0]=-obj2.center_of_body->x;
+		position[1]=-obj2.center_of_body->y;
+		position[2]=-obj2.center_of_body->z-((obj.dimension[2]/2)+d12+(lenz/2));
+	}
+	else if(pos=='s'){
+		position[0]=-obj2.center_of_body->x;
+		position[1]=-obj2.center_of_body->y;
+		position[2]=-obj2.center_of_body->z+((obj.dimension[2]/2)+d12+(lenz/2));
+	}
+}
+
+
+void cameraMotion(int value){
+
+	//while(keyobj.theta<=360.0){
+		keyobj.theta += 0.025f;
+
+		keyobj.eyex=R*sin(keyobj.theta)*sin(keyobj.phi);
+
+		keyobj.eyez=R*cos(keyobj.theta)*sin(keyobj.phi);
+
+		keyobj.lx = sin(180+keyobj.theta)*sin(keyobj.phi);
+		keyobj.lz = cos(180+keyobj.theta)*sin(keyobj.phi);
+
+
+		glutPostRedisplay();
+		glutTimerFunc(50,cameraMotion, 0);
+
+
 }
