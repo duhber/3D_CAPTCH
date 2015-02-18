@@ -32,9 +32,9 @@ clear all;
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model=1001:1001%1001:numModel+1000
+for model=1012:1012%1001:numModel+1000
     
-    for frame1=1:1
+    for frame1=0:0
         
         f1=sprintf(strcat(modelDir,'jpg'),model,frame1);
         
@@ -42,11 +42,9 @@ for model=1001:1001%1001:numModel+1000
             continue;
         end
         
-<<<<<<< HEAD
-        for frame2=0:0%frame1+1:1
-=======
-        for frame2=5:5%frame1+1:1
->>>>>>> A101
+
+        for frame2=4:4%frame1+1:1
+            
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -139,13 +137,19 @@ disp(count);
 disp(correct);
 
 figure, imshow(I1);
-hold on
-plot(truthPoints(:,1), truthPoints(:,2),'og');
+
+if correct >=1
+    hold on
+    plot(truthPoints(:,1), truthPoints(:,2),'og');
+end
 
 figure, imshow(I2);
-hold on
-plot(trackPoints(:,1), trackPoints(:,2),'og');
+if correct>=1
 
+    hold on
+    plot(trackPoints(:,1), trackPoints(:,2),'og');
+
+end
 
 
 
