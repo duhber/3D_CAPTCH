@@ -196,7 +196,7 @@ void display(){
     glPopMatrix();
     glPushMatrix();
 
-    	glTranslatef(position[0],position[1]+(obj2.dimension[1])/2,position[2]);
+    	glTranslatef(position[0],(position[1]+(obj2.dimension[1])/2),position[2]);
 
     	if(obj2.dimension[0]<obj2.dimension[2]){
     	    glTranslatef(obj2.center_of_body->x,obj2.center_of_body->y,obj2.center_of_body->z);
@@ -273,7 +273,7 @@ void init(){
     model1=obj.drawModel();
     obj2.loadObj(filename2);
     model2=obj2.drawModel();
-    setPosition('d');
+    setPosition('s');
 
     R=*max_element(obj.dimension,obj.dimension+3);
 
