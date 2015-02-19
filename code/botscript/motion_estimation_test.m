@@ -32,9 +32,9 @@ clear all;
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model=1012:1012%1001:numModel+1000
+for model=1010:1010%1001:numModel+1000
     
-    for frame1=0:0
+    for frame1=1:1
         
         f1=sprintf(strcat(modelDir,'jpg'),model,frame1);
         

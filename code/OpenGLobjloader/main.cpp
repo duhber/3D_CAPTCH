@@ -62,6 +62,7 @@ bool isUnProject=true;
 int main(int argc, char **argv){
 	if(argc <3){
 		cout<<"usage: <filename> <imgno> \n";
+
 		return 1;
 	}
     filename=argv[1];
@@ -74,7 +75,7 @@ int main(int argc, char **argv){
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
         	isUnProject=false;
-        	obj.includeTexture=false;
+        	obj.includeTexture=true;
         }
 
         else
