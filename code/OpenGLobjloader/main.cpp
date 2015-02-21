@@ -26,6 +26,7 @@
 #include "readwritekeypoints.h"
 #include<cmath>
 #include<ctime>
+
 #define pi 3.14
 /** ***************** function definition *************/
 
@@ -33,6 +34,7 @@ void init();
 void display();
 void reshape(int w, int h);
 void rotate();
+
 void processSpecialKeys(int, int , int);
 void processMouse(int, int , int ,int);
 void processNormalKeys(unsigned char key, int x, int y);
@@ -44,7 +46,11 @@ void capture_frame(unsigned int);
 
 void setCamera(unsigned char c);
 
+bool isVisible(double x, double y);
+
 void genViewPoints();
+
+
 /** ----------**********************************------ ****/
 
 /* ************** global variables ********************** */
@@ -82,6 +88,8 @@ int SCREEN_HEIGHT=400;
 
 bool isUnProject=true;
 
+
+float visibility;
 
 /** ******************************************************************************* **/
 
@@ -456,6 +464,8 @@ void Project(){
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
 
+	visibility=0.0;
+
 	for(int i=0;i<keyobj.objpoints.size();i++){
 		posX=keyobj.objpoints[i]->x;
 		posY=keyobj.objpoints[i]->y;
@@ -464,7 +474,13 @@ void Project(){
 		gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
 		winY = (double)viewport[3] - winY;
 		keyobj.keypoints.push_back(new projectedKey(winX,winY));
+
+		if(isVisible(winX,winY)){
+			visibility+=1.0;
+		}
 	}
+	visibility=(visibility*100.0)/keyobj.objpoints.size();
+	cout<<visibility<<endl;
 }
 
 void capture_frame(unsigned int framenum){
@@ -661,5 +677,23 @@ void genViewPoints(){
 	keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
 
 }
+
+bool isVisible(double x, double y){
+
+	if(x>0.0 && x <SCREEN_WIDTH && y>0.0 && y <SCREEN_HEIGHT)
+		return true;
+	else
+		return false;
+}
+
+
+
+
+
+
+
+
+
+
 
 
