@@ -8,7 +8,7 @@
 #include<fstream>
 #include<vector>
 #include<cstdio>
-
+#include<cmath>
 #ifndef READWRITEKEYPOINTS_H_
 #define READWRITEKEYPOINTS_H_
 

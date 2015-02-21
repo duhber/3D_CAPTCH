@@ -32,7 +32,7 @@ clear all;
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model=1002:1002%1001:numModel+1000
+for model=1001:1007%1001:numModel+1000
     
     for frame1=0:0
         
@@ -42,7 +42,7 @@ for model=1002:1002%1001:numModel+1000
             continue;
         end
         
-        for frame2=4:4%frame1+1:1
+        for frame2=1:1%frame1+1:1
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -65,8 +65,24 @@ for model=1002:1002%1001:numModel+1000
             fname1=sprintf(strcat(modelDir,'p'),model,frame1);
             fname2=sprintf(strcat(modelDir,'p'),model,frame2);
             
+            if(exist(fname1,'file')==0)
+                continue;
+            end
+            
+            if(exist(fname2,'file')==0)
+                continue;
+            end
+            
             file1=importdata(fname1,' ',1);
+            
+            if isstruct(file1)==0
+                continue;
+            end
             file2=importdata(fname2,' ',1);
+            
+            if isstruct(file2)==0
+                continue;
+            end
             
             frameKeyPoints1=file1.data;
             frameKeyPoints2=file2.data;
@@ -81,8 +97,8 @@ for model=1002:1002%1001:numModel+1000
             
             numpoints=size(frameKeyPoints1,1);
             
-            I3=affineWarp(I1,inv(Motion_est));
-            figure, imshow(I3);
+%             I3=affineWarp(I1,inv(Motion_est));
+%             figure, imshow(I3);
             
             for pointI=1:numpoints
                 
@@ -114,10 +130,15 @@ for model=1002:1002%1001:numModel+1000
                     if ((x_truth-r<=x_track && x_track<=x_truth+r) && (y_truth-r<=y_track && y_track<=y_truth+r))
                         %disp('motion estimation');
                         correct=correct+1;
-                        
-                        truthPoints(correct,1:2)=[x1 y1];
-                        trackPoints(correct,1:2)=[x_track y_track];
+                        errorstat(count)=0;
+                    else
+                        errorstat(count)=sqrt((x_track-x_truth)^2 + (y_track-y_truth)^2)-r;
+                        if(errorstat(count) >=100)
+                            errorstat(count)=100;
+                        end
                     end
+                else
+                    errorstat(count)=100;
                 end
                 
                 
@@ -130,19 +151,6 @@ end
 
 disp(count);
 disp(correct);
-
-figure, imshow(I1);
-if correct >=1
-    hold on
-    plot(truthPoints(:,1), truthPoints(:,2),'xg');
-end
-
-figure, imshow(I2);
-
-if correct >=1
-    hold on
-    plot(trackPoints(:,1), trackPoints(:,2),'xg');
-end
 
 
 
