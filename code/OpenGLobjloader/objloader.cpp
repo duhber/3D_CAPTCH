@@ -82,7 +82,7 @@ unsigned int objloader::loadTexture(const char * imgname){
     	exit(1);
     }
 
-    cout<<imsize<<endl;
+    //cout<<imsize<<endl;
     fread(data,1,imsize,file);
 
     fclose(file);
@@ -293,7 +293,7 @@ void objloader::loadMaterial(const char* mtlname){
 				filename[len-3]='b';
 			}
 			strcat(temp,filename);
-			cout<<temp<<endl;
+			//cout<<temp<<endl;
 			mtl[id]->texId=loadTexture(temp);
 		}
 
@@ -406,14 +406,14 @@ void objloader::findMinMax(float fx, float fy, float fz){
 }
 
 void objloader::findCenterOfBody(){
-	cout<<max.y<<" "<<min.y<<endl;
+	//cout<<max.y<<" "<<min.y<<endl;
 
 	center_of_body=new coordinate((max.x+min.x)/2,(max.y+min.y)/2,(max.z+min.z)/2);
 	dimension[0]=max.x-min.x;
 	dimension[1]=max.y-min.y;
 	dimension[2]=max.z-min.z;
 
-	for(int i=0;i<3;i++)
-		cout<<i<<" "<<dimension[i]<<" ";
-	cout<<endl;
+	//for(int i=0;i<3;i++)
+	//	cout<<dimension[i]<<" ";
+	//cout<<endl;
 }
