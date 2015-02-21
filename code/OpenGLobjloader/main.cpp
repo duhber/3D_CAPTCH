@@ -15,10 +15,22 @@
  *
  *	q   : exit
  *
+ *	use when rendering two models
+ *
  *	w   : place model2 on neg z-axis
  *	s   : place nodel2 on pos z-axis
  *	a   : place model2 on neg x-axis
  *	d   : place model2 on pos x-axis
+ *
+ *	1-8 : different camera
+ *
+ *	g   : generate random viewpoints
+ *
+ *	x   : quit and return with values -1 to tell other programs that it has error (used when screen renders bad models)
+ *
+ *	pgup: look up camera
+ *
+ *	pgdn: look down camera
  *
  */
 
@@ -44,13 +56,14 @@ void Project();
 
 void capture_frame(unsigned int);
 
+
 void setCamera(unsigned char c);
 
 bool isVisible(double x, double y);
 
 void genViewPoints();
 
-
+void idle();
 /** ----------**********************************------ ****/
 
 /* ************** global variables ********************** */
@@ -87,6 +100,8 @@ int SCREEN_WIDTH=600;
 int SCREEN_HEIGHT=400;
 
 bool isUnProject=true;
+bool isCapture=true;
+bool isProject=false;
 
 
 float visibility;
@@ -111,6 +126,8 @@ int main(int argc, char **argv){
         	keyobj.readKeypoints(pname);
         	isUnProject=false;
         	obj.includeTexture=true;
+        	//isProject=true;
+        	isCapture=false;
 
         }
 
@@ -133,14 +150,15 @@ int main(int argc, char **argv){
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
+
     glutSpecialFunc(processSpecialKeys);
     glutMouseFunc(processMouse);
     glutKeyboardFunc(processNormalKeys);
-    glutIdleFunc(rotate);
+    glutIdleFunc(idle);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
                   GLUT_ACTION_GLUTMAINLOOP_RETURNS);
     glutMainLoop();
-    cout<<"hey babe"<<endl;
+
     if(deletemodel)
     	return -1;
     else
@@ -211,6 +229,26 @@ void display(){
     	isUnProject=true;
     }
 
+    if(isCapture){
+		capture_frame(framenum);
+		char mystr[256];
+		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
+		keyobj.writeKeypoints(mystr);
+		glutLeaveMainLoop();
+
+    }
+
+    if(isProject){
+		Project();
+		capture_frame(framenum);
+		char mystr[256];
+		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
+		keyobj.writeKeypoints(mystr);
+		if(visibility>40.0){
+			framenum++;
+		}
+    }
+
     if(framenum==2){
     	glutLeaveMainLoop();
 
@@ -272,12 +310,11 @@ void init(){
     if(obj.dimension[0]>obj.dimension[2]){
     	s=30.0/obj.dimension[0];
     	axis='1';
-    	cout<<"true"<<endl;
+
     }
     else{
     	s=30.0/obj.dimension[2];
     	axis='2';
-    	cout<<"hisdfa"<<endl;
     }
     obj.dimension[0]=s*obj.dimension[0];
     obj.dimension[1]=s*obj.dimension[1];
@@ -480,7 +517,7 @@ void Project(){
 		}
 	}
 	visibility=(visibility*100.0)/keyobj.objpoints.size();
-	cout<<visibility<<endl;
+	cout<<modelno<<" "<<visibility<<endl;
 }
 
 void capture_frame(unsigned int framenum){
@@ -620,7 +657,7 @@ void genViewPoints(){
 
 	dely=rand()%(k);
 
-	cout<<k<<" "<<dely<<endl;
+	//cout<<k<<" "<<dely<<endl;
 
 	delphi=rand()%31;
 	if(sign==0){
@@ -687,7 +724,12 @@ bool isVisible(double x, double y){
 }
 
 
-
+void idle(){
+	isProject=true;
+	setCamera(axis);
+	genViewPoints();
+	glutPostRedisplay();
+}
 
 
 
