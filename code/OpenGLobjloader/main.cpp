@@ -62,6 +62,7 @@ void setCamera(unsigned char c);
 bool isVisible(double x, double y);
 
 void genViewPoints();
+int  getPrime(int k);
 
 void idle();
 /** ----------**********************************------ ****/
@@ -244,7 +245,7 @@ void display(){
 		char mystr[256];
 		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
 		keyobj.writeKeypoints(mystr);
-		if(visibility>40.0){
+		if(visibility>50.0){
 			framenum++;
 		}
     }
@@ -651,31 +652,34 @@ void genViewPoints(){
 	int delx, delz, dely, delphi, deltheta;
 	int sign;
 	srand(time(NULL));
-	sign=rand()%2;
-	int k=(int)ceil(obj.dimension[1]/2);
 
+	sign=rand()%2;
+
+	int k=(int)ceil(obj.dimension[1]);
+	k=getPrime(k);
 
 	dely=rand()%(k);
-
-	//cout<<k<<" "<<dely<<endl;
-
 	delphi=rand()%31;
+
 	if(sign==0){
-		keyobj.eyey=rand()%k;
 
 		keyobj.phi-=delphi;
 	}
 	else{
-		keyobj.eyey+=dely+3;
+
 		keyobj.phi+=delphi;
 	}
+
+	keyobj.eyey=dely;
 
 	sign=rand()%2;
 
 	if(axis=='1'){
-		delz=rand()%7+1;
+
+		delz=rand()%10+5;
 		k=(int)ceil(obj.dimension[0]/2);
-		delx=rand()%(k+2);
+		k=getPrime(k);
+		delx=rand()%(k);
 		if(sign==0){
 			keyobj.eyex=-delx;
 		}
@@ -683,24 +687,26 @@ void genViewPoints(){
 			keyobj.eyex=delx;
 
 		}
-		keyobj.eyez-=delz;
+		keyobj.eyez=delz;
 	}
 	else{
-		delz=rand()%7+1;
+		delx=rand()%10+5;
 		k=(int)ceil(obj.dimension[2]/2);
-		delx=rand()%(k+2);
+		k=getPrime(k);
+		delz=rand()%(k);
 		if(sign==0){
-			keyobj.eyez=-delx;
+			keyobj.eyez=-delz;
 		}
 		else{
-			keyobj.eyez=delx;
+			keyobj.eyez=delz;
 
 		}
-		keyobj.eyex-=delz;
+		keyobj.eyex=delx;
 
 	}
 
 	sign=rand()%2;
+
 	deltheta=rand()%31;
 	if(sign==0){
 		keyobj.theta-=deltheta;
@@ -731,7 +737,25 @@ void idle(){
 	glutPostRedisplay();
 }
 
+int getPrime(int k){
 
+    while(1){
+
+        int i;
+        for(i=2;i*i<=k;i++){
+            if(k%i==0){
+                k=k+1;
+                break;
+            }
+        }
+        if(i*i>k)
+            break;
+
+    }
+
+    return k;
+
+}
 
 
 
