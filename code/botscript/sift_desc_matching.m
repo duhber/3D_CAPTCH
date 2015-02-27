@@ -26,7 +26,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=1;
+    numModel=150;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -35,11 +35,23 @@ clear all;
     count=0;
     correct=0;
     
+    errorcount=0;
+    
+    modelCount=0;
+    modelCorrect=0;
+    modelAccuracy=0;
+   
+    modelStat=zeros(numModel,4);
+    save=1;
+    
     
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model=1001:1006%1001:numModel+1000
+for model=1001:numModel+1000
+    
+    modelCount=0;
+    modelCorrect=0;
     
     for frame1=0:0
         
@@ -98,6 +110,11 @@ for model=1001:1006%1001:numModel+1000
             %%%%%% compute the sift descriptor of right frame %%%%%%%%%%%%%
             
             [image2, des2, locs2]=sift(I2);
+            
+            if size(des2,1)==0
+                continue;
+            end            
+            
                             
             numpoints=size(frameKeyPoints1,1);
           
@@ -132,6 +149,7 @@ for model=1001:1006%1001:numModel+1000
                 end
                 
                 count=count+1;
+                modelCount=modelCount+1;
                 %%%%%%%%%%%% sift descriptor matching test %%%%%%%%%%%%%%%%
                 
                 
@@ -147,15 +165,18 @@ for model=1001:1006%1001:numModel+1000
                     if ((x_truth-r<=x_track && x_track<=x_truth+r) && (y_truth-r<=y_track && y_track<=y_truth+r))
                         %disp('motion estimation');
                         correct=correct+1;
-                        errorstat(count)=0;
+                        modelCorrect=modelCorrect+1;
+%                         errorstat(count)=0;
                     else
-                        errorstat(count)=sqrt((x_track-x_truth)^2 + (y_track-y_truth)^2)-r;
-                        if(errorstat(count) >=100)
-                            errorstat(count)=100;
+                        errorcount=errorcount+1;
+                        errorstat(errorcount)=sqrt((x_track-x_truth)^2 + (y_track-y_truth)^2)-r;
+                        if(errorstat(errorcount) >=100)
+                            errorstat(errorcount)=100;
                         end
                     end
                 else
-                    errorstat(count)=100;
+                    errorcount=errorcount+1;
+                    errorstat(errorcount)=100;
                 end
                 
                 
@@ -163,6 +184,10 @@ for model=1001:1006%1001:numModel+1000
             
         end
     end
+    
+    modelAccuracy=(modelCorrect/modelCount)*100;
+    
+    modelStat(model-1000,:)=[model modelCount modelCorrect modelAccuracy];
     
 end
 
@@ -173,7 +198,15 @@ percentage=(correct/count)*100;
 
 disp(percentage);
 
+modelStat(model-1000+1,:)=[0 count correct percentage];
 
+filename=strcat('../result/SIFT_test_result_',datestr(now,'dd_mmmm_yyyy'));
+
+if save==1
+    dlmwrite(filename,modelStat,'delimiter','\t');
+    
+    errorEstimate(errorstat,'SIFT');
+end
 
 
 
