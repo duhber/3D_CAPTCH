@@ -30,7 +30,7 @@ int main(int argc, char ** argv){
         len=strlen(line);
         numspace=count(line,line+len,' ');
 
-        cout<<numspace<<endl;
+        //cout<<numspace<<endl;
 
         if(numspace==3){
             sscanf(line,"%f %f %f %f",&y,&x,&temp1,&temp2);

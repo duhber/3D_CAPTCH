@@ -21,7 +21,7 @@ clear all;
 %                              INITIALIZE VARIABLES
     numModel=150;
     
-    modelDir='../frame/%d/frame_000%d.';
+    modelDir='../frame/%s/%d/frame_000%d.';
     
     r=25; %radius of toleramce
     

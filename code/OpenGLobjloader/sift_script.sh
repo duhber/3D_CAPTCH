@@ -2,7 +2,7 @@
 
 dir=$1
 stopPoint=$2
-for i in $(ls badmodel|grep '\.obj$');do
+for i in $(ls model|grep '\.obj$');do
     
         dir=$((dir+1))
 
