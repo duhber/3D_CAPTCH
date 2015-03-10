@@ -43,7 +43,7 @@ material::material(){
 }
 
 objloader::objloader(){
-	includeTexture=true;
+	includeTexture=false;
 }
 
 unsigned int objloader::loadTexture(const char * imgname){
@@ -308,6 +308,14 @@ unsigned int objloader::drawModel(){
     unsigned int num;
     int prevmtl=-1;
     int material;
+
+    float amb[3]={0.0,0.0,0.2};
+    float dif[3]={0.0,0.0,0.5};
+    float spc[3]={0.5,0.5,0.5};
+/*    srand(time(NULL));
+    get3FloatNum(amb);
+    get3FloatNum(dif);
+    get3FloatNum(spc);*/
     num=glGenLists(1);
 
     glNewList(num,GL_COMPILE);
@@ -320,6 +328,10 @@ unsigned int objloader::drawModel(){
     			setMaterial(material);
     			prevmtl=material;
     		}
+    		if(!includeTexture){
+    			setMannequin(amb, dif, spc, material);
+    		}
+
     		if(mtl[material]->texId!=-1 && includeTexture){
     			glEnable(GL_TEXTURE_2D);
     			glBindTexture(GL_TEXTURE_2D, mtl[material]->texId);
@@ -416,4 +428,32 @@ void objloader::findCenterOfBody(){
 	//for(int i=0;i<3;i++)
 	//	cout<<dimension[i]<<" ";
 	//cout<<endl;
+}
+
+void objloader::get3FloatNum(float f[]){
+
+    for(int i=0;i<3;i++){
+        int temp=rand()%10;
+
+        f[i]=float(temp)/10.0;
+        cout<<f[i]<<" ";
+
+    }
+    cout<<endl;
+}
+
+void objloader::setMannequin(float amb[], float dif[], float spc[], int matId){
+	GLfloat mat_amb[4], mat_dif[4],mat_spc[4];
+	for(int i=0;i<3;i++){
+		mat_amb[i]=amb[i];
+		mat_dif[i]=dif[i];
+		mat_spc[i]=spc[i];
+	}
+	mat_amb[3]=1.0;
+	mat_dif[3]=1.0;
+	mat_spc[3]=1.0;
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
+	glMaterialf(GL_FRONT, GL_SHININESS, mtl[matId]->Ns);
 }

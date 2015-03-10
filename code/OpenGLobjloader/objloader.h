@@ -17,6 +17,7 @@
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
+#include<ctime>
 #include<map>
 
 #ifndef OBJLOADER_H_
@@ -73,7 +74,8 @@ class objloader{
 		void clean();
 		void findCenterOfBody();
 		void findMinMax(float x, float y, float z);
-
+		void get3FloatNum(float f[]);
+		void setMannequin(float amb[], float dif[], float spc[], int id);
 
 	public:
 		float dimension[3];
