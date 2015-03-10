@@ -61,6 +61,9 @@ void setCamera(unsigned char c);
 
 bool isVisible(double x, double y);
 
+void light_switched();
+
+void genLightSource(int numOfLight);
 void genViewPoints();
 int  getPrime(int k);
 
@@ -118,7 +121,6 @@ int main(int argc, char **argv){
 
     filename1=argv[1];
     modelno=argv[2];
-
     if(argc==4){
         pname=argv[3];
         int l;
@@ -180,29 +182,7 @@ void display(){
     gluLookAt(keyobj.eyex, keyobj.eyey, keyobj.eyez,
     		keyobj.lx+keyobj.eyex, keyobj.ly+keyobj.eyey, keyobj.lz+keyobj.eyez,
 			keyobj.upx, keyobj.upy, keyobj.upz);
-
-
     /* Opengl light */
-    GLfloat pos0[]={0.0,100.0,0.0,0.0};
-    glLightfv(GL_LIGHT0,GL_POSITION,pos0);
-
-    GLfloat pos1[]={100.0,0.0,0.0,1.0};
-    glLightfv(GL_LIGHT1,GL_POSITION,pos1);
-
-    GLfloat pos2[]={0.0,0.0,100.0,1.0};
-    glLightfv(GL_LIGHT2,GL_POSITION,pos2);
-
-    GLfloat pos3[]={100.0,0.0,100.0,1.0};
-    glLightfv(GL_LIGHT3,GL_POSITION,pos3);
-
-    GLfloat pos4[]={-100.0,0.0,0.0,1.0};
-    glLightfv(GL_LIGHT4,GL_POSITION,pos4);
-
-    GLfloat pos5[]={0.0,-100.0,0.0,0.0};
-    glLightfv(GL_LIGHT5,GL_POSITION,pos5);
-
-    GLfloat pos6[]={0.0,0.0,-100.0,0.0};
-    glLightfv(GL_LIGHT6,GL_POSITION,pos6);
 
     /* multisampling parameters
     GLint	iMultiSample	= 0;
@@ -251,6 +231,7 @@ void display(){
     }
 
     if(framenum==2){
+    	cout<<filename1<<endl;
     	glutLeaveMainLoop();
 
     }
@@ -262,17 +243,16 @@ void init(){
     //glClearColor(1.0f,1.0f,1.0f,1.0f);// white background
     glClearColor(0.0f,0.0f,0.0f,0.0f);//black background
     glShadeModel(GL_SMOOTH);
-
+    glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_LIGHT1);
-    glEnable(GL_LIGHT2);
+    //glEnable(GL_LIGHT1);
+    /*glEnable(GL_LIGHT2);
     glEnable(GL_LIGHT3);
     glEnable(GL_LIGHT4);
     glEnable(GL_LIGHT5);
-    glEnable(GL_LIGHT6);
+    glEnable(GL_LIGHT6);*/
 
     GLfloat col0[]={1.0,1.0,1.0,1.0};
     GLfloat col1[]={0.0,0.0,1.0,1.0};
@@ -299,6 +279,27 @@ void init(){
 
     glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT6,GL_AMBIENT,col3);
+
+    GLfloat pos0[]={0.0,50.0,0.0,0.0};
+    glLightfv(GL_LIGHT0,GL_POSITION,pos0);
+
+    GLfloat pos1[]={100.0,0.0,0.0,1.0};
+    glLightfv(GL_LIGHT1,GL_POSITION,pos1);
+
+    GLfloat pos2[]={0.0,100.0,0.0,1.0};
+    glLightfv(GL_LIGHT2,GL_POSITION,pos2);
+
+    GLfloat pos3[]={100.0,0.0,100.0,1.0};
+    glLightfv(GL_LIGHT3,GL_POSITION,pos3);
+
+    GLfloat pos4[]={-100.0,0.0,0.0,1.0};
+    glLightfv(GL_LIGHT4,GL_POSITION,pos4);
+
+    GLfloat pos5[]={0.0,-100.0,0.0,0.0};
+    glLightfv(GL_LIGHT5,GL_POSITION,pos5);
+
+    GLfloat pos6[]={0.0,0.0,-100.0,0.0};
+    glLightfv(GL_LIGHT6,GL_POSITION,pos6);
 
     glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
@@ -387,6 +388,7 @@ void processSpecialKeys(int key, int xx, int yy) {
 
 			break;
 	}
+	glutPostRedisplay();
 }
 
 void processMouse(int button, int state, int x, int y){
@@ -451,6 +453,10 @@ void processNormalKeys(unsigned char key, int x, int y){
 	else if(key=='x'){
 		deletemodel=1;
 		glutLeaveMainLoop();
+	}
+
+	else if(key=='i'){
+		idle();
 	}
 
 	else if(key=='s'){
@@ -646,6 +652,7 @@ void setCamera(unsigned char c){
 			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
 			break;
 	}
+	//glutPostRedisplay();
 }
 
 void genViewPoints(){
@@ -653,20 +660,22 @@ void genViewPoints(){
 	int sign;
 	srand(time(NULL));
 
+
+
 	sign=rand()%2;
 
 	int k=(int)ceil(obj.dimension[1]);
 	k=getPrime(k);
 
 	dely=rand()%(k);
-	delphi=rand()%31;
+	delphi=rand()%31+10;
 
 	if(sign==0){
-
+		dely-=2;
 		keyobj.phi-=delphi;
 	}
 	else{
-
+		dely+=2.0;
 		keyobj.phi+=delphi;
 	}
 
@@ -679,7 +688,7 @@ void genViewPoints(){
 		delz=rand()%10+5;
 		k=(int)ceil(obj.dimension[0]/2);
 		k=getPrime(k);
-		delx=rand()%(k);
+		delx=rand()%(k)+5;
 		if(sign==0){
 			keyobj.eyex=-delx;
 		}
@@ -693,7 +702,7 @@ void genViewPoints(){
 		delx=rand()%10+5;
 		k=(int)ceil(obj.dimension[2]/2);
 		k=getPrime(k);
-		delz=rand()%(k);
+		delz=rand()%(k)+5;
 		if(sign==0){
 			keyobj.eyez=-delz;
 		}
@@ -707,7 +716,7 @@ void genViewPoints(){
 
 	sign=rand()%2;
 
-	deltheta=rand()%31;
+	deltheta=rand()%31+10;
 	if(sign==0){
 		keyobj.theta-=deltheta;
 	}
@@ -734,6 +743,7 @@ void idle(){
 	isProject=true;
 	setCamera(axis);
 	genViewPoints();
+	genLightSource(2);
 	glutPostRedisplay();
 }
 
@@ -758,8 +768,41 @@ int getPrime(int k){
 }
 
 
+void light_switched(){
+	int i;
 
+	for(int j=0;j<7;j++){
+		i=rand()%2;
+		if(i==1)
+			glEnable(GL_LIGHT0+j);
+		else
+			glDisable(GL_LIGHT0+j);
+	}
+}
 
+void genLightSource(int numOfLight){
+	int theta,phi;
+	float r, temp;
+	temp=max(obj.dimension[0],obj.dimension[2]);
+	r=max(temp,obj.dimension[1])+5.0;
+	float lightpos[4];
+	lightpos[3]=1.0;
+	for(int i=0;i<numOfLight;i++){
 
+		theta=rand()%360;
+		phi=rand()%360;
+
+		lightpos[0]=r*sin(float(theta)*pi/180.0)*sin(float(phi)*pi/180.0);
+		lightpos[1]=r*cos(float(phi)*pi/180.0);
+		lightpos[2]=r*cos(float(theta)*pi/180.0)*sin(float(phi)*pi/180.0);
+		glEnable(GL_LIGHT0+i);
+		glLightfv(GL_LIGHT0+i,GL_POSITION,lightpos);
+	}
+
+	for(int i=numOfLight;i<7;i++){
+		glDisable(GL_LIGHT0+i);
+	}
+
+}
 
 
