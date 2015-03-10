@@ -20,7 +20,7 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
-%clc;
+clc;
 close all;
 clear all;
 
@@ -205,7 +205,7 @@ filename=strcat('../result/SIFT_test_result_',datestr(now,'dd_mmmm_yyyy'));
 if save==1
     dlmwrite(filename,modelStat,'delimiter','\t');
     
-    errorEstimate(errorstat,'SIFT');
+%     errorEstimate(errorstat,'SIFT');
 end
 
 

@@ -13,7 +13,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
-%clc;
+clc;
 close all;
 clear all;
 
@@ -21,7 +21,7 @@ clear all;
 %                              INITIALIZE VARIABLES
     numModel=150;
     
-    modelDir='../frame/%s/%d/frame_000%d.';
+    modelDir='../frame/%d/frame_000%d.';
     
     r=25; %radius of toleramce
     
@@ -184,7 +184,7 @@ filename=strcat('../result/MOTEST_test_result_',datestr(now,'dd_mmmm_yyyy'));
 
 if save==1
     dlmwrite(filename,modelStat,'delimiter','\t');
-    errorEstimate(errorstat,'MOTEST');
+%     errorEstimate(errorstat,'MOTEST');
     
 end
 

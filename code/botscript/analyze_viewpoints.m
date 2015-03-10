@@ -25,8 +25,8 @@ clear all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             INITIALIZE VARIABLES
 modelDir='../frame/%s/%d/frame_000%d.';
-renderMethod='without_texture';
-resltDir='../result/%s/%s_test_result_27_February_2015';
+renderMethod='mannequin';
+resltDir='../result/%s/%s_test_result_04_March_2015';
 
 frame1=0;
 frame2=1;
@@ -42,7 +42,7 @@ siftest=dlmread(sprintf(resltDir,renderMethod,'SIFT'));
 
 modelnum=size(mottest,1)-1;
 
-outfile=zeros(modelnum,8);
+outfile=zeros(modelnum,9);
 
 
 for model=1001:1000+modelnum
@@ -76,7 +76,9 @@ for model=1001:1000+modelnum
         viewdiff(3)=temp;
     end
     
-    outfile(model-1000,:)=[model mottest(model-1000,4) siftest(model-1000,4) viewdiff];
+    dist=sqrt(viewdiff(1)^2 + viewdiff(2)^2 +viewdiff(3)^2);
+    
+    outfile(model-1000,:)=[model mottest(model-1000,4) siftest(model-1000,4) dist viewdiff];
     
     
 end
@@ -84,13 +86,13 @@ end
 % arrange rows in ascending order of motion estimation accuracy 
 
 n=size(outfile,1);
-
+c=size(outfile,2);
 [val,index]=sort(outfile(:,2));
 
-motestViewPointDiff=zeros(size(outfile));
+motestViewPointDiff=zeros(n,c-1);
 
 for i=1:n
-    motestViewPointDiff(i,:)=outfile(index(i),:);
+    motestViewPointDiff(i,:)=[outfile(index(i),1:2) outfile(index(i),4:c)];
 end
 
 filename=sprintf(outDir,renderMethod,'MOTEST');
@@ -99,10 +101,10 @@ dlmwrite(filename,motestViewPointDiff,'delimiter','\t');
 
 [val,index]=sort(outfile(:,3));
 
-siftViewPointDiff=zeros(size(outfile));
+siftViewPointDiff=zeros(n,c-1);
 
 for i=1:n
-    siftViewPointDiff(i,:)=outfile(index(i),:);
+    siftViewPointDiff(i,:)=[outfile(index(i),1:1) outfile(index(i),3:c)];
 end
 
 filename=sprintf(outDir,renderMethod,'SIFT');
