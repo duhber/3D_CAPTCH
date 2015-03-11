@@ -64,6 +64,9 @@ bool isVisible(double x, double y);
 void light_switched();
 
 void genLightSource(int numOfLight);
+
+void useSameLight(int numOfLight);
+
 void genViewPoints();
 int  getPrime(int k);
 
@@ -230,7 +233,7 @@ void display(){
 		}
     }
 
-    if(framenum==2){
+    if(framenum==3){
     	cout<<filename1<<endl;
     	glutLeaveMainLoop();
 
@@ -741,9 +744,14 @@ bool isVisible(double x, double y){
 
 void idle(){
 	isProject=true;
-	setCamera(axis);
-	genViewPoints();
-	genLightSource(2);
+	if(framenum==1){
+		setCamera(axis);
+		genViewPoints();
+		genLightSource(2);
+	}
+	else if(framenum==2){
+		useSameLight(2);
+	}
 	glutPostRedisplay();
 }
 
@@ -805,6 +813,18 @@ void genLightSource(int numOfLight){
 
 }
 
+void useSameLight(int numOfLight){
+
+	glEnable(GL_LIGHT0);
+
+    GLfloat pos0[]={0.0,50.0,0.0,0.0};
+    glLightfv(GL_LIGHT0,GL_POSITION,pos0);
+
+    for(int i=1;i<numOfLight;i++){
+    	glDisable(GL_LIGHT0+i);
+
+    }
+}
 
 
 
