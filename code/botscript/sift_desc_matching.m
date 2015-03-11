@@ -26,7 +26,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=150;
+    numModel=1;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -42,7 +42,7 @@ clear all;
     modelAccuracy=0;
    
     modelStat=zeros(numModel,4);
-    save=1;
+    save=0;
     
     
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
@@ -166,6 +166,7 @@ for model=1001:numModel+1000
                         %disp('motion estimation');
                         correct=correct+1;
                         modelCorrect=modelCorrect+1;
+                        trackedSuccessPoints(modelCorrect,:)=[x1 y1 x_track y_track];
 %                         errorstat(count)=0;
                     else
                         errorcount=errorcount+1;
@@ -188,6 +189,12 @@ for model=1001:numModel+1000
     modelAccuracy=(modelCorrect/modelCount)*100;
     
     modelStat(model-1000,:)=[model modelCount modelCorrect modelAccuracy];
+    
+    if modelCorrect>=1
+        writeImage(I1,I2,trackedSuccessPoints,model);
+    end
+    
+    clear trackedSuccessPoints;
     
 end
 
