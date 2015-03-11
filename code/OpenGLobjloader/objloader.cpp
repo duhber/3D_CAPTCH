@@ -309,9 +309,9 @@ unsigned int objloader::drawModel(){
     int prevmtl=-1;
     int material;
 
-    float amb[3]={0.0,0.0,0.2};
-    float dif[3]={0.0,0.0,0.5};
-    float spc[3]={0.5,0.5,0.5};
+    float amb[3]={0.2,0.2,0.2};
+    float dif[3]={0.5,0.5,0.5};
+    float spc[3]={1.0,1.0,1.0};
 /*    srand(time(NULL));
     get3FloatNum(amb);
     get3FloatNum(dif);
