@@ -2,7 +2,8 @@
 
 dir=$1
 stopPoint=$2
-for i in $(ls model|grep '\.obj$');do
+modeldir="badmodel"
+for i in $(ls $modeldir|grep '\.obj$');do
     
         dir=$((dir+1))
 
@@ -22,8 +23,17 @@ for i in $(ls model|grep '\.obj$');do
 
         modelname="./model/$i"
 
+		while true
+		do
+			model2=$(ls $modeldir|grep '\.obj$' | shuf -n 1)
+			if [ "$i" != "$model2" ]
+			then
+				break
+			fi
+		done
+		modelname2="./model/$model2"
         while true;do
-            ./a.out $modelname $dir2
+            ./a.out $modelname $modelname2 $dir2 "double"
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
@@ -45,7 +55,7 @@ for i in $(ls model|grep '\.obj$');do
 
 
         while true;do
-            ./a.out $modelname $dir2 $frame0
+            ./a.out $modelname $modelname2 $dir2 "single" $frame0
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
