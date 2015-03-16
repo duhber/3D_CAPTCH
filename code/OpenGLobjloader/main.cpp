@@ -56,38 +56,37 @@ void Project();
 
 void capture_frame(unsigned int);
 
-
-void setCamera(unsigned char c);
+void setCamera();
 
 bool isVisible(double x, double y);
 
-void light_switched();
-
 void genLightSource(int numOfLight);
 void genViewPoints();
-int  getPrime(int k);
+
+void setObj2Pos(unsigned char c);
 
 void idle();
 /** ----------**********************************------ ****/
 
 /* ************** global variables ********************** */
 
-unsigned int model1;// object to render
+unsigned int model1,model2;// object to render
 static GLfloat spin=0.0;
 
-char *filename1;
+char *filename1, *filename2;
 char *dirname;
 char *pname;
 
 char *modelno;
+char *mode;
 
 char unpFileName[26];
 
-objloader obj;
+objloader obj,obj2;
 
 bool deletemodel=0;
 
-float s;// scaling parameter
+float s,s2;// scaling parameter
 
 unsigned char axis;// 1-> x-axis  2->z-axis
 
@@ -110,25 +109,34 @@ bool isProject=false;
 
 float visibility;
 
+float position[3];// position for model2
+
+float  d12=0.0, R;// distance between the model
+
+int maxAngle=30;
 /** ******************************************************************************* **/
 
 
 int main(int argc, char **argv){
-	if(argc <3){
-		cout<<"usage: <filename1> <imgno> \n";
+	if(argc <5){
+		cout<<"usage: <filename1> <filename2> <imgno><mode>(optional)<projectedfiles> \n";
 		return 1;
 	}
 
     filename1=argv[1];
-    modelno=argv[2];
-    if(argc==4){
-        pname=argv[3];
+    filename2=argv[2];
+    modelno=argv[3];
+    mode=argv[4];
+    cout<<mode<<endl;
+    if(argc==6){
+        pname=argv[5];
         int l;
         l=strlen(pname);
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
         	isUnProject=false;
         	obj.includeTexture=true;
+        	obj2.includeTexture=true;
         	//isProject=true;
         	isCapture=false;
 
@@ -201,6 +209,16 @@ void display(){
     	glCallList(model1);
     glPopMatrix();
 
+    if(mode[0]=='d'){
+    	cout<<"true"<<endl;
+    	glPushMatrix();
+    		glScalef(s2,s2,s2);
+    		glTranslatef(position[0],(position[1]+(obj2.dimension[1])/2),position[2]);
+
+    		glCallList(model2);
+    		glPopMatrix();
+
+    }
     if(!isUnProject){
     	unProject();
 
@@ -280,7 +298,7 @@ void init(){
     glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT6,GL_AMBIENT,col3);
 
-    GLfloat pos0[]={0.0,50.0,0.0,0.0};
+    GLfloat pos0[]={50.0,50.0,50.0,0.0};
     glLightfv(GL_LIGHT0,GL_POSITION,pos0);
 
     GLfloat pos1[]={100.0,0.0,0.0,1.0};
@@ -307,22 +325,33 @@ void init(){
     obj.loadObj(filename1);
     model1=obj.drawModel();
 
+    obj2.loadObj(filename2);
+    model2=obj2.drawModel();
+
     //scale down if it is too big
 
-    if(obj.dimension[0]>obj.dimension[2]){
-    	s=30.0/obj.dimension[0];
-    	axis='1';
 
-    }
-    else{
-    	s=30.0/obj.dimension[2];
-    	axis='2';
-    }
+    s=30.0/obj.dimension[0];
     obj.dimension[0]=s*obj.dimension[0];
     obj.dimension[1]=s*obj.dimension[1];
     obj.dimension[2]=s*obj.dimension[2];
+
+
+
+    // scale object2
+
+    s2=30.0/obj2.dimension[0];
+    obj2.dimension[0]=s2*obj2.dimension[0];
+    obj2.dimension[1]=s2*obj2.dimension[1];
+    obj2.dimension[2]=s2*obj2.dimension[2];
+
+	keyobj.theta=90.0;
+    keyobj.phi=90.0;
+
+    R=20.0;
     if(isUnProject)
-    	setCamera(axis);
+    	setCamera();
+    setObj2Pos('w');
 }
 
 void reshape(int w, int h){
@@ -354,27 +383,21 @@ void processSpecialKeys(int key, int xx, int yy) {
 
 		case GLUT_KEY_PAGE_UP:
 			keyobj.phi-=1.0f;
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
+			setCamera();
 			break;
 
 		case GLUT_KEY_PAGE_DOWN:
 			keyobj.phi+=1.0f;
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
+			setCamera();
 			break;
 
 		case GLUT_KEY_LEFT :
 			keyobj.theta -= 1.0f;
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
+			setCamera();
 			break;
 		case GLUT_KEY_RIGHT :
 			keyobj.theta += 1.0f;
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
+			setCamera();
 			break;
 		case GLUT_KEY_UP :
 			keyobj.eyex += keyobj.lx * fraction;
@@ -423,30 +446,6 @@ void processNormalKeys(unsigned char key, int x, int y){
 		glutLeaveMainLoop();
 	}
 
-	else if(key=='1')
-		setCamera('1');
-
-	else if(key=='2')
-		setCamera('2');
-
-	else if(key=='3')
-		setCamera('3');
-
-	else if(key=='4')
-		setCamera('4');
-
-	else if(key=='5')
-		setCamera('5');
-
-	else if(key=='6')
-		setCamera('6');
-
-	else if(key=='7')
-		setCamera('7');
-
-	else if(key=='8')
-		setCamera('8');
-
 	else if(key=='g')
 		genViewPoints();
 
@@ -458,14 +457,33 @@ void processNormalKeys(unsigned char key, int x, int y){
 	else if(key=='i'){
 		idle();
 	}
+	if(key=='w'){
 
+		setObj2Pos('w');
+
+	}
+	else if(key=='a'){
+
+		setObj2Pos('a');
+	}
 	else if(key=='s'){
+
+		setObj2Pos('s');
+	}
+
+	else if(key=='d'){
+
+		setObj2Pos('d');
+	}
+
+	else if(key=='z'){
 		cout<<keyobj.eyex<<" "<<keyobj.eyey<<" "<<keyobj.eyez<<" ";
 
 		cout<<keyobj.theta<<" "<<keyobj.phi<<" ";
 
 		cout<<keyobj.lx<<" "<<keyobj.ly<<" "<<keyobj.lz<<"\n ";
 	}
+	glutPostRedisplay();
 }
 
 void unProject(){
@@ -552,182 +570,33 @@ void capture_frame(unsigned int framenum){
   delete [] pRGB;
 }
 
-void setCamera(unsigned char c){
-	switch(c){
-		case '1':
-			keyobj.eyex=0.0;
-			keyobj.eyey=obj.dimension[1]/2;
-			keyobj.eyez=obj.dimension[0]>obj.dimension[2]?obj.dimension[0]/2:obj.dimension[0]/2+obj.dimension[2]/2;
+void setCamera(){
+			keyobj.eyex=R*sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
+			keyobj.eyey=R*cos(keyobj.phi*pi/180);
+			keyobj.eyez=R*cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
 
-			keyobj.theta=0.0;
-			keyobj.phi=90.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
+			keyobj.ly=-cos(keyobj.phi*pi/180);
+			keyobj.lx = -sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
 			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-		case '2':
-			keyobj.eyez=0.0;
-			keyobj.eyey=obj.dimension[1]/2;
-			keyobj.eyex=obj.dimension[2]>obj.dimension[0]?obj.dimension[2]/2:obj.dimension[0]/2+obj.dimension[2]/2;
-
-			keyobj.theta=-90.0;
-			keyobj.phi=90.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-		case '3':
-			keyobj.eyex=0.0;
-			keyobj.eyey=obj.dimension[1]/2;
-			keyobj.eyez=-1*(obj.dimension[0]>obj.dimension[2]?obj.dimension[0]/2:obj.dimension[0]/2+obj.dimension[2]/2);
-
-			keyobj.theta=-180.0;
-			keyobj.phi=90.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-		case '4':
-			keyobj.eyez=0.0;
-			keyobj.eyey=obj.dimension[1]/2;
-			keyobj.eyex=-1*(obj.dimension[2]>obj.dimension[0]?obj.dimension[2]/2:obj.dimension[0]/2+obj.dimension[2]/2);
-
-			keyobj.theta=90.0;
-			keyobj.phi=90.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-		case '5':
-			keyobj.eyex=0.0;
-			keyobj.eyey=obj.dimension[1];
-			keyobj.eyez=obj.dimension[0]>obj.dimension[2]?obj.dimension[0]/2:obj.dimension[0]/2+obj.dimension[2]/2;
-
-			keyobj.theta=0.0;
-			keyobj.phi=120.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-		case '6':
-			keyobj.eyez=0.0;
-			keyobj.eyey=obj.dimension[1];
-			keyobj.eyex=obj.dimension[2]>obj.dimension[0]?obj.dimension[2]/2:obj.dimension[0]/2+obj.dimension[2]/2;
-
-
-			keyobj.theta=-90.0;
-			keyobj.phi=120.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-		case '7':
-			keyobj.eyex=0.0;
-			keyobj.eyey=obj.dimension[1];
-			keyobj.eyez=-1*(obj.dimension[0]>obj.dimension[2]?obj.dimension[0]/2:obj.dimension[0]/2+obj.dimension[2]/2);
-
-			keyobj.theta=-180.0;
-			keyobj.phi=120.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-		case '8':
-			keyobj.eyez=0.0;
-			keyobj.eyey=obj.dimension[1];
-			keyobj.eyex=-1*(obj.dimension[2]>obj.dimension[0]?obj.dimension[2]/2:obj.dimension[0]/2+obj.dimension[2]/2);
-
-			keyobj.theta=90.0;
-			keyobj.phi=120.0;
-
-			keyobj.ly=cos(keyobj.phi*pi/180);
-			keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-			break;
-	}
-	//glutPostRedisplay();
 }
 
 void genViewPoints(){
-	int delx, delz, dely, delphi, deltheta;
-	int sign;
 	srand(time(NULL));
+	int sign=rand()%2;
+	if(!sign)
+		sign=-1;
+	int	sign2=-1;
 
+	float del1,del2;
 
+	del1=rand()%maxAngle;
+	del2=rand()%maxAngle;
 
-	sign=rand()%2;
+	keyobj.theta=90.0;
+	keyobj.phi=90.0;
 
-	int k=(int)ceil(obj.dimension[1]);
-	k=getPrime(k);
-
-	dely=rand()%(k);
-	delphi=rand()%31+10;
-
-	if(sign==0){
-		dely-=2;
-		keyobj.phi-=delphi;
-	}
-	else{
-		dely+=2.0;
-		keyobj.phi+=delphi;
-	}
-
-	keyobj.eyey=dely;
-
-	sign=rand()%2;
-
-	if(axis=='1'){
-
-		delz=rand()%10+5;
-		k=(int)ceil(obj.dimension[0]/2);
-		k=getPrime(k);
-		delx=rand()%(k)+5;
-		if(sign==0){
-			keyobj.eyex=-delx;
-		}
-		else{
-			keyobj.eyex=delx;
-
-		}
-		keyobj.eyez=delz;
-	}
-	else{
-		delx=rand()%10+5;
-		k=(int)ceil(obj.dimension[2]/2);
-		k=getPrime(k);
-		delz=rand()%(k)+5;
-		if(sign==0){
-			keyobj.eyez=-delz;
-		}
-		else{
-			keyobj.eyez=delz;
-
-		}
-		keyobj.eyex=delx;
-
-	}
-
-	sign=rand()%2;
-
-	deltheta=rand()%31+10;
-	if(sign==0){
-		keyobj.theta-=deltheta;
-	}
-	else{
-		keyobj.theta+=deltheta;
-	}
-
-	keyobj.ly=cos(keyobj.phi*pi/180);
-	keyobj.lx = sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-	keyobj.lz = -cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
-
+	keyobj.theta+=del1*sign;
+	keyobj.phi+=del2*sign;
 }
 
 bool isVisible(double x, double y){
@@ -741,43 +610,11 @@ bool isVisible(double x, double y){
 
 void idle(){
 	isProject=true;
-	setCamera(axis);
+
 	genViewPoints();
+	setCamera();
 	genLightSource(2);
 	glutPostRedisplay();
-}
-
-int getPrime(int k){
-
-    while(1){
-
-        int i;
-        for(i=2;i*i<=k;i++){
-            if(k%i==0){
-                k=k+1;
-                break;
-            }
-        }
-        if(i*i>k)
-            break;
-
-    }
-
-    return k;
-
-}
-
-
-void light_switched(){
-	int i;
-
-	for(int j=0;j<7;j++){
-		i=rand()%2;
-		if(i==1)
-			glEnable(GL_LIGHT0+j);
-		else
-			glDisable(GL_LIGHT0+j);
-	}
 }
 
 void genLightSource(int numOfLight){
@@ -805,6 +642,14 @@ void genLightSource(int numOfLight){
 
 }
 
+
+void setObj2Pos(unsigned char pos){
+
+	position[0]=-obj2.center_of_body->x;
+	position[1]=-obj2.center_of_body->y;
+	position[2]=-obj2.center_of_body->z-((obj.dimension[2]/2)+obj2.dimension[2]);
+
+}
 
 
 
