@@ -19,7 +19,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=150;
+    numModel=132;
     
     modelDir='../frame/%d/frame_000%d.';
     

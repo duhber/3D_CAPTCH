@@ -2,7 +2,7 @@
 
 dir=$1
 stopPoint=$2
-modeldir="badmodel"
+modeldir="model"
 for i in $(ls $modeldir|grep '\.obj$');do
     
         dir=$((dir+1))
@@ -33,7 +33,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
 		done
 		modelname2="./model/$model2"
         while true;do
-            ./a.out $modelname $modelname2 $dir2 "double"
+            ./a.out $modelname $modelname2 $dir2 "single"
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
@@ -55,7 +55,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
 
         while true;do
-            ./a.out $modelname $modelname2 $dir2 "single" $frame0
+            ./a.out $modelname $modelname2 $dir2 "double" $frame0
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then

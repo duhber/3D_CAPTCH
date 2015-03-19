@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=150;
+    numModel=132;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -175,24 +175,35 @@ for model=1001:1000+numModel
                 
                 sumV=[0 0];
                 vspace2=zeros(size(vspace1));
-                
+               
+                matchSiftPoint=0;
                 for i=1:n-1
                     matchindx=findMatch(des1,idx(i),des2);
-                    vspace2(i+1,:)=[locs2(matchindx,2) locs2(matchindx,1)];
+                    if matchindx ~=0
+                        vspace2(i+1,:)=[locs2(matchindx,2) locs2(matchindx,1)];
+                        matchSiftPoint=i+1;
+                        break;
+                    end
                 end
                 
+%                 
+%                 for i=2:n
+%                     sumV=sumV+a(i)*vspace2(i,:);
+%                 end
                 
-                
-                for i=2:n
-                    sumV=sumV+a(i)*vspace2(i,:);
+%                 sumV=sumV*(-1);
+%                 vspace2(1,:)=sumV/a(1);
+%                 
+%                 
+%                 if size(vspace2,1)<2
+%                     continue
+%                 end
+                if matchSiftPoint ~=0
+                    x_track=vspace2(matchSiftPoint,1);
+                    y_track=vspace2(matchSiftPoint,2);
+                else
+                    continue
                 end
-                
-                sumV=sumV*(-1);
-                vspace2(1,:)=sumV/a(1);
-                
-                x_track=vspace2(1,1);
-                y_track=vspace2(1,2);
-                
                 
                 
                 x_truth=x2;
@@ -231,7 +242,7 @@ disp(percentage);
 
 modelStat(model-1000+1,:)=[0 count correct percentage];
 
-filename=strcat('../result/LC_SIFT_test_result_',datestr(now,'dd_mmmm_yyyy'));
+filename=strcat('../result/NEAREST_SIFT_test_result_',datestr(now,'dd_mmmm_yyyy'));
 
 if save==1
     dlmwrite(filename,modelStat,'delimiter','\t');
