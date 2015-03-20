@@ -4,6 +4,11 @@
  *  Created on: 26-Jan-2015
  *      Author: duhber
  *
+ *
+ *
+ * 		THIS IS A TEST MODEL
+ *
+ *
  *      IMPORTANT KEYS:
  *	--> : turn right
  *	<-- : turn left
@@ -40,6 +45,7 @@
 #include<ctime>
 
 #define pi 3.14
+
 /** ***************** function definition *************/
 
 void init();
@@ -66,7 +72,7 @@ void genViewPoints();
 void setObj2Pos(unsigned char c);
 
 void idle();
-/** ----------**********************************------ ****/
+
 
 /* ************** global variables ********************** */
 
@@ -114,6 +120,9 @@ float position[3];// position for model2
 float  d12=0.0, R;// distance between the model
 
 int maxAngle=30;
+
+float angle1=0.0;
+float angle2=90.0;
 /** ******************************************************************************* **/
 
 
@@ -204,19 +213,19 @@ void display(){
     /* *******************render scene here ***************************/
     glPushMatrix();
     	glScalef(s,s,s);
-    	glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y+(obj.dimension[1])/2,-obj.center_of_body->z);
+    	glTranslatef(-obj.center_of_body->x-d12/2,-obj.center_of_body->y,-obj.center_of_body->z);
 
     	glCallList(model1);
     glPopMatrix();
 
     if(mode[0]=='d'){
-    	cout<<"true"<<endl;
+    	//cout<<"true"<<endl;
     	glPushMatrix();
     		glScalef(s2,s2,s2);
-    		glTranslatef(position[0],(position[1]+(obj2.dimension[1])/2),position[2]);
+    		glTranslatef(position[0],position[1],position[2]);
 
     		glCallList(model2);
-    		glPopMatrix();
+    	glPopMatrix();
 
     }
     if(!isUnProject){
@@ -332,23 +341,33 @@ void init(){
 
 
     s=30.0/obj.dimension[0];
-    obj.dimension[0]=s*obj.dimension[0];
+    /*obj.dimension[0]=s*obj.dimension[0];
     obj.dimension[1]=s*obj.dimension[1];
     obj.dimension[2]=s*obj.dimension[2];
+    */
+    cout<<obj.dimension[0]<<" "<< obj.dimension[1]<<" "<<obj.dimension[2]<<endl;
+    float max_len1,max_len2;
+
+    max_len1=*max_element(obj.dimension,obj.dimension+3);
+
 
 
 
     // scale object2
 
     s2=30.0/obj2.dimension[0];
-    obj2.dimension[0]=s2*obj2.dimension[0];
+    /*obj2.dimension[0]=s2*obj2.dimension[0];
     obj2.dimension[1]=s2*obj2.dimension[1];
     obj2.dimension[2]=s2*obj2.dimension[2];
+	*/
+    cout<<obj2.dimension[0]<<" "<< obj2.dimension[1]<<" "<<obj2.dimension[2]<<endl;
 
-	keyobj.theta=90.0;
-    keyobj.phi=90.0;
+    max_len2=*max_element(obj2.dimension,obj2.dimension+3);
 
-    R=20.0;
+	keyobj.theta=angle1;
+    keyobj.phi=angle2;
+
+    R=max(max_len1*s,max_len2*s2)/2;
     if(isUnProject)
     	setCamera();
     setObj2Pos('w');
@@ -587,16 +606,19 @@ void genViewPoints(){
 		sign=-1;
 	int	sign2=-1;
 
-	float del1,del2;
+	float del1,del2, delR;
 
 	del1=rand()%maxAngle;
 	del2=rand()%maxAngle;
 
-	keyobj.theta=90.0;
-	keyobj.phi=90.0;
+	keyobj.theta=angle1;
+	keyobj.phi=angle2;
+
+	delR=rand()%7;
+	R=R-delR;
 
 	keyobj.theta+=del1*sign;
-	keyobj.phi+=del2*sign;
+	keyobj.phi+=del2*sign2;
 }
 
 bool isVisible(double x, double y){
@@ -644,10 +666,10 @@ void genLightSource(int numOfLight){
 
 
 void setObj2Pos(unsigned char pos){
-
+	d12=max(obj.dimension[0],obj2.dimension[0]);
 	position[0]=-obj2.center_of_body->x;
 	position[1]=-obj2.center_of_body->y;
-	position[2]=-obj2.center_of_body->z-((obj.dimension[2]/2)+obj2.dimension[2]);
+	position[2]=-obj2.center_of_body->z;
 
 }
 
