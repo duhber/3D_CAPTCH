@@ -33,7 +33,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
 		done
 		modelname2="./model/$model2"
         while true;do
-            ./a.out $modelname $modelname2 $dir2 "single"
+            ./a.out $modelname $modelname2 $dir2 "double"
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
