@@ -41,6 +41,7 @@
 
 #include "objloader.h"
 #include "readwritekeypoints.h"
+#include "backgroundTexture.h"
 #include<cmath>
 #include<ctime>
 
@@ -76,10 +77,10 @@ void idle();
 
 /* ************** global variables ********************** */
 
-unsigned int model1,model2;// object to render
+unsigned int model1,model2,bgid;// object to render
 static GLfloat spin=0.0;
 
-char *filename1, *filename2;
+char *filename1, *filename2, *texfile;
 char *dirname;
 char *pname;
 
@@ -89,6 +90,9 @@ char *mode;
 char unpFileName[26];
 
 objloader obj,obj2;
+backgroundTexture bg;
+
+
 
 bool deletemodel=0;
 
@@ -127,8 +131,8 @@ float angle2=90.0;
 
 
 int main(int argc, char **argv){
-	if(argc <5){
-		cout<<"usage: <filename1> <filename2> <imgno><mode>(optional)<projectedfiles> \n";
+	if(argc <6){
+		cout<<"usage: <filename1> <filename2> <imgno><mode><texfile>(optional)<projectedfiles> \n";
 		return 1;
 	}
 
@@ -137,8 +141,9 @@ int main(int argc, char **argv){
     modelno=argv[3];
     mode=argv[4];
     cout<<mode<<endl;
-    if(argc==6){
-        pname=argv[5];
+    texfile=argv[5];
+    if(argc==7){
+        pname=argv[6];
         int l;
         l=strlen(pname);
         if(pname[l-1]=='p'){
@@ -212,11 +217,17 @@ void display(){
 
     /* *******************render scene here ***************************/
     glPushMatrix();
+    		glScalef(obj.dimension[0]*3,obj.dimension[1]*3,obj.dimension[2]/3);
+    		glTranslatef(-0.5,-0.5,-1.0);
+        	glCallList(bgid);
+    glPopMatrix();
+    glPushMatrix();
     	glScalef(s,s,s);
     	glTranslatef(-obj.center_of_body->x-d12/2,-obj.center_of_body->y,-obj.center_of_body->z);
 
     	glCallList(model1);
     glPopMatrix();
+
 
     if(mode[0]=='d'){
     	//cout<<"true"<<endl;
@@ -228,6 +239,7 @@ void display(){
     	glPopMatrix();
 
     }
+
     if(!isUnProject){
     	unProject();
 
@@ -336,6 +348,9 @@ void init(){
 
     obj2.loadObj(filename2);
     model2=obj2.drawModel();
+
+    bg.loadTexture(texfile);
+    bgid=bg.drawBG();
 
     //scale down if it is too big
 
