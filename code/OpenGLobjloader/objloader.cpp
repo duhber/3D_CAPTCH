@@ -148,6 +148,10 @@ void objloader::loadObj(const char* objname){
     max.y=-999999.9f;
     max.z=-999999.9f;
 
+    double cuml_x=0.0;
+    double cuml_y=0.0;
+    double cuml_z=0.0;
+
     while(!in.eof()){
 
         in.getline(line,256);
@@ -178,6 +182,9 @@ void objloader::loadObj(const char* objname){
             sscanf(line,"v %f %f %f",&x, &y, &z);
 
             vertex.push_back(new coordinate(x,y,z));
+            cuml_x+=x;
+            cuml_y+=y;
+            cuml_z+=z;
             findMinMax(x,y,z);
         }
 
@@ -208,7 +215,7 @@ void objloader::loadObj(const char* objname){
 
 
     }
-    findCenterOfBody();
+    findCenterOfBody(cuml_x,cuml_y,cuml_z,vertex.size());
 
     in.close();
 }
@@ -417,17 +424,17 @@ void objloader::findMinMax(float fx, float fy, float fz){
 
 }
 
-void objloader::findCenterOfBody(){
+void objloader::findCenterOfBody(double Cx, double Cy, double Cz, int n){
 	//cout<<max.y<<" "<<min.y<<endl;
 
-	center_of_body=new coordinate((max.x+min.x)/2,(max.y+min.y)/2,(max.z+min.z)/2);
+	center_of_body=new coordinate(Cx/n,Cy/n,Cz/n);
 	dimension[0]=max.x-min.x;
 	dimension[1]=max.y-min.y;
 	dimension[2]=max.z-min.z;
 
-	//for(int i=0;i<3;i++)
-	//	cout<<dimension[i]<<" ";
-	//cout<<endl;
+	for(int i=0;i<3;i++)
+		cout<<dimension[i]<<" ";
+	cout<<endl;
 }
 
 void objloader::get3FloatNum(float f[]){

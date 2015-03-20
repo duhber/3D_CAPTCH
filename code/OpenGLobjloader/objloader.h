@@ -72,7 +72,7 @@ class objloader{
 		void loadMaterial(const char* mtlname);
 		void setMaterial(int matId);
 		void clean();
-		void findCenterOfBody();
+		void findCenterOfBody(double, double, double, int n);
 		void findMinMax(float x, float y, float z);
 		void get3FloatNum(float f[]);
 		void setMannequin(float amb[], float dif[], float spc[], int id);
