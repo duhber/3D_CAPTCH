@@ -19,7 +19,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=132;
+    numModel=165;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -41,9 +41,10 @@ clear all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for model=1001:numModel+1000
+    disp(model);
     modelCount=0;
     modelCorrect=0;    
-    for frame1=0:0
+    for frame1=1:1
         
         f1=sprintf(strcat(modelDir,'jpg'),model,frame1);
         
@@ -51,7 +52,7 @@ for model=1001:numModel+1000
             continue;
         end
         
-        for frame2=1:1%frame1+1:1
+        for frame2=2:2%frame1+1:1
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             

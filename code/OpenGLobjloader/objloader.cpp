@@ -427,14 +427,25 @@ void objloader::findMinMax(float fx, float fy, float fz){
 void objloader::findCenterOfBody(double Cx, double Cy, double Cz, int n){
 	//cout<<max.y<<" "<<min.y<<endl;
 
-	center_of_body=new coordinate(Cx/n,Cy/n,Cz/n);
+	double c1,c2,c3;
+	c1=Cx/double(n);
+	c2=Cy/double(n);
+	c3=Cz/double(n);
+	center_of_body=new coordinate(c1,c2,c3);
 	dimension[0]=max.x-min.x;
 	dimension[1]=max.y-min.y;
 	dimension[2]=max.z-min.z;
 
-	for(int i=0;i<3;i++)
+	double d1,d2;
+
+	d1=pow(max.x-c1,2)+pow(max.y-c2,2)+pow(max.z-c3,2);
+	d2=pow(min.x-c1,2)+pow(min.y-c2,2)+pow(min.z-c3,2);
+
+	radiusBV=sqrt(d1>d2?d1:d2);
+
+	/*for(int i=0;i<3;i++)
 		cout<<dimension[i]<<" ";
-	cout<<endl;
+	cout<<endl;*/
 }
 
 void objloader::get3FloatNum(float f[]){

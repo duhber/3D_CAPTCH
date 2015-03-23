@@ -18,6 +18,7 @@
 #include<cstdlib>
 #include<cstring>
 #include<ctime>
+#include<cmath>
 #include<map>
 
 #ifndef OBJLOADER_H_
@@ -80,6 +81,7 @@ class objloader{
 	public:
 		float dimension[3];
 		coordinate *center_of_body;
+		float radiusBV;//radius of the bounding volume
 		bool includeTexture;
 		objloader();
 		~objloader();

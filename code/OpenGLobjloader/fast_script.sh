@@ -37,7 +37,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
 		teximg=$(ls $texdir|grep '\.bmp$' | shuf -n 1)
         texfilename="./texture/$teximg"
 		while true;do
-            ./a.out $modelname $modelname2 $dir2 "double" $texfilename
+            ./a.out $modelname $modelname2 $dir2 "sx" $texfilename
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
@@ -54,12 +54,23 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
         ./fast-Linux-x86_64  $img $keyimg
         ./fast-Linux-x86_64 -l $img $keypoint
+        
+        #if the image is just a black screen 
+
+        numkeys=$(wc -l $keypoint|awk '{print $1}')
+        if [ $numkeys -eq 0 ]
+        then 
+            continue
+        else
+            echo "OK $numkeys"
+        fi
+
 
         cat $keypoint >> $frame0
 
 
         while true;do
-            ./a.out $modelname $modelname2 $dir2 "double" $texfilename $frame0
+            ./a.out $modelname $modelname2 $dir2 "st" $texfilename $frame0
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then

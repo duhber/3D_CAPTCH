@@ -130,7 +130,7 @@ float position[3];// position for model2
 
 float  d12=0.0, R;// distance between the model
 
-int maxAngle=30;
+int maxAngle=47;
 
 float theta_init;
 float phi_init;
@@ -225,7 +225,7 @@ void display(){
     /* *******************render scene here ***************************/
     if(mode[1]=='t' && isUnProject){
     	glPushMatrix();
-    		glScalef(obj.dimension[0]*2,obj.dimension[1]*2,obj.dimension[2]*2);
+    		glScalef(R*3,R*3,R*3);
     		//glTranslatef(-0.5,-0.5,-1.0);
         	glCallList(bgid);
         glPopMatrix();
@@ -371,10 +371,10 @@ void init(){
     obj.dimension[1]=s*obj.dimension[1];
     obj.dimension[2]=s*obj.dimension[2];
     */
-    cout<<obj.dimension[0]<<" "<< obj.dimension[1]<<" "<<obj.dimension[2]<<endl;
-    float max_len1,max_len2;
+    //cout<<obj.dimension[0]<<" "<< obj.dimension[1]<<" "<<obj.dimension[2]<<endl;
+    //float max_len1,max_len2;
 
-    max_len1=*max_element(obj.dimension,obj.dimension+3);
+    //max_len1=*max_element(obj.dimension,obj.dimension+3);
 
 
 
@@ -386,16 +386,16 @@ void init(){
     obj2.dimension[1]=s2*obj2.dimension[1];
     obj2.dimension[2]=s2*obj2.dimension[2];
 	*/
-    cout<<obj2.dimension[0]<<" "<< obj2.dimension[1]<<" "<<obj2.dimension[2]<<endl;
+   //cout<<obj2.dimension[0]<<" "<< obj2.dimension[1]<<" "<<obj2.dimension[2]<<endl;
 
-    max_len2=*max_element(obj2.dimension,obj2.dimension+3);
+    //max_len2=*max_element(obj2.dimension,obj2.dimension+3);
 
-    R=max(max_len1*s,max_len2*s2)/2;
-    R=(max_len1*s)/2;
+    //R=max(max_len1*s,max_len2*s2)/2;
+    R=(obj.radiusBV)*s;
     if(isUnProject){
     	srand(time(NULL));
     	keyobj.phi=rand()%135;
-    	keyobj.theta=rand()%181;
+    	keyobj.theta=rand()%360;
     	setCamera();
     }
     theta_init=keyobj.theta;
@@ -620,7 +620,7 @@ void capture_frame(unsigned int framenum){
 }
 
 void setCamera(){
-			R=sqrt(keyobj.eyex*keyobj.eyex+keyobj.eyey*keyobj.eyey+keyobj.eyez*keyobj.eyez);
+			//R=sqrt(keyobj.eyex*keyobj.eyex+keyobj.eyey*keyobj.eyey+keyobj.eyez*keyobj.eyez);
 			keyobj.eyex=R*sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
 			keyobj.eyey=R*cos(keyobj.phi*pi/180);
 			keyobj.eyez=R*cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
@@ -635,7 +635,9 @@ void genViewPoints(){
 	int sign=rand()%2;
 	if(!sign)
 		sign=-1;
-	int	sign2=-1;
+	int	sign2=rand()%2;
+	if(!sign2)
+		sign2=-1;
 
 	float del1,del2, delR;
 
@@ -646,7 +648,7 @@ void genViewPoints(){
 	keyobj.phi=phi_init;
 
 	delR=rand()%7;
-	R=R-delR;
+	//R=R-delR;
 
 	keyobj.theta+=del1*sign;
 	keyobj.phi+=del2*sign2;
