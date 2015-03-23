@@ -36,8 +36,10 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
 		teximg=$(ls $texdir|grep '\.bmp$' | shuf -n 1)
         texfilename="./texture/$teximg"
+		teximg2=$(ls $texdir|grep '\.bmp$' | shuf -n 1)
+        texfilename2="./texture/$teximg2"
 		while true;do
-            ./a.out $modelname $modelname2 $dir2 "sx" $texfilename
+            ./a.out $modelname $modelname2 $dir2 "sx" $texfilename $texfilename2
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
@@ -70,7 +72,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
 
         while true;do
-            ./a.out $modelname $modelname2 $dir2 "st" $texfilename $frame0
+            ./a.out $modelname $modelname2 $dir2 "st" $texfilename $texfilename2 $frame0
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then

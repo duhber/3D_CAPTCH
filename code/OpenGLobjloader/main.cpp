@@ -84,10 +84,10 @@ void idle();
 
 /* ************** global variables ********************** */
 
-unsigned int model1,model2,bgid;// object to render
+unsigned int model1,model2,bgid,tex1,tex2;// object to render
 static GLfloat spin=0.0;
 
-char *filename1, *filename2, *texfile;
+char *filename1, *filename2, *texfile, *texfile2;
 char *dirname;
 char *pname;
 
@@ -97,7 +97,7 @@ char *mode;
 char unpFileName[26];
 
 objloader obj,obj2;
-backgroundTexture bg;
+backgroundTexture bg1,bg2;
 
 
 
@@ -138,8 +138,8 @@ float phi_init;
 
 
 int main(int argc, char **argv){
-	if(argc <6){
-		cout<<"usage: <filename1> <filename2> <imgno><mode><texfile>(optional)<projectedfiles> \n";
+	if(argc <7){
+		cout<<"usage: <filename1> <filename2> <imgno><mode><texfile1><texfile2>(optional)<projectedfiles> \n";
 		return 1;
 	}
 
@@ -149,8 +149,9 @@ int main(int argc, char **argv){
     mode=argv[4];
     cout<<argv[5]<<endl;
     texfile=argv[5];
-    if(argc==7){
-        pname=argv[6];
+    texfile2=argv[6];
+    if(argc==8){
+        pname=argv[7];
         int l;
         l=strlen(pname);
         if(pname[l-1]=='p'){
@@ -223,6 +224,8 @@ void display(){
 	*/
 
     /* *******************render scene here ***************************/
+
+
     if(mode[1]=='t' && isUnProject){
     	glPushMatrix();
     		glScalef(R*3,R*3,R*3);
@@ -360,8 +363,11 @@ void init(){
     obj2.loadObj(filename2);
     model2=obj2.drawModel();
 
-    bg.loadTexture(texfile);
-    bgid=bg.drawBG();
+    bg1.loadTexture(texfile);
+    tex1=bg1.drawBG();
+
+    bg2.loadTexture(texfile2);
+    tex2=bg2.drawBG();
 
     //scale down if it is too big
 
@@ -665,8 +671,11 @@ bool isVisible(double x, double y){
 
 void idle(){
 	isProject=true;
-	if(framenum==2)
+	bgid=tex1;
+	if(framenum==2){
+		bgid=tex2;
 		genViewPoints();
+	}
 	setCamera();
 	genLightSource(2);
 	glutPostRedisplay();

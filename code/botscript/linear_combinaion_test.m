@@ -213,6 +213,8 @@ for model=1001:1000+numModel
                     
                     correct=correct+1;
                     modelCorrect=modelCorrect+1;
+                     correctPoints(1:4,modelCorrect)=[x1; y1; x_track ;y_track];
+
 
                 else
                     errorcount=errorcount+1;
@@ -228,6 +230,10 @@ for model=1001:1000+numModel
     end
     
     modelAccuracy=(modelCorrect/modelCount)*100;
+    
+    if modelCorrect ~=0
+        writeImage(I1,I2,correctPoints,model,'Nearest_SIFT_');
+    end
     
     modelStat(model-1000,:)=[model modelCount modelCorrect modelAccuracy];
     

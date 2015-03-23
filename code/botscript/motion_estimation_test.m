@@ -147,6 +147,8 @@ for model=1001:numModel+1000
                         correct=correct+1;
                         modelCorrect=modelCorrect+1;
                         %errorstat(count)=0;
+                        correctPoints(1:4,modelCorrect)=[x1; y1; x_track ;y_track];
+
                     else
                         errorcount=errorcount+1;
                         errorstat(errorcount)=sqrt((x_track-x_truth)^2 + (y_track-y_truth)^2)-r;
@@ -168,6 +170,10 @@ for model=1001:numModel+1000
     modelAccuracy=(modelCorrect/modelCount)*100;
     
     modelStat(model-1000,:)=[model modelCount modelCorrect modelAccuracy];
+    
+    if modelCorrect ~=0
+        writeImage(I1,I2,correctPoints,model,'MOT_EST_');
+    end
     
 end
 
