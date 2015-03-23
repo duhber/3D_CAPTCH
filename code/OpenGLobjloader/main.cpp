@@ -37,6 +37,12 @@
  *
  *	pgdn: look down camera
  *
+ *	mode:
+ *		s-> single model
+ *		d-> two model
+ *		t-> with background texture
+ *		x-> no background texture
+ *
  */
 
 #include "objloader.h"
@@ -69,6 +75,7 @@ bool isVisible(double x, double y);
 
 void genLightSource(int numOfLight);
 void genViewPoints();
+void reDraw();
 
 void setObj2Pos(unsigned char c);
 
@@ -125,8 +132,8 @@ float  d12=0.0, R;// distance between the model
 
 int maxAngle=30;
 
-float angle1=0.0;
-float angle2=90.0;
+float theta_init;
+float phi_init;
 /** ******************************************************************************* **/
 
 
@@ -140,7 +147,7 @@ int main(int argc, char **argv){
     filename2=argv[2];
     modelno=argv[3];
     mode=argv[4];
-    cout<<mode<<endl;
+    cout<<argv[5]<<endl;
     texfile=argv[5];
     if(argc==7){
         pname=argv[6];
@@ -149,7 +156,7 @@ int main(int argc, char **argv){
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
         	isUnProject=false;
-        	obj.includeTexture=true;
+
         	obj2.includeTexture=true;
         	//isProject=true;
         	isCapture=false;
@@ -216,14 +223,17 @@ void display(){
 	*/
 
     /* *******************render scene here ***************************/
-    glPushMatrix();
-    		glScalef(obj.dimension[0]*3,obj.dimension[1]*3,obj.dimension[2]/3);
-    		glTranslatef(-0.5,-0.5,-1.0);
+    if(mode[1]=='t' && isUnProject){
+    	glPushMatrix();
+    		glScalef(obj.dimension[0]*2,obj.dimension[1]*2,obj.dimension[2]*2);
+    		//glTranslatef(-0.5,-0.5,-1.0);
         	glCallList(bgid);
-    glPopMatrix();
+        glPopMatrix();
+    }
+
     glPushMatrix();
     	glScalef(s,s,s);
-    	glTranslatef(-obj.center_of_body->x-d12/2,-obj.center_of_body->y,-obj.center_of_body->z);
+    	glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y,-obj.center_of_body->z);
 
     	glCallList(model1);
     glPopMatrix();
@@ -265,11 +275,12 @@ void display(){
 		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
 		keyobj.writeKeypoints(mystr);
 		if(visibility>50.0){
+			reDraw();
 			framenum++;
 		}
     }
 
-    if(framenum==2){
+    if(framenum==3){
     	cout<<filename1<<endl;
     	glutLeaveMainLoop();
 
@@ -379,12 +390,16 @@ void init(){
 
     max_len2=*max_element(obj2.dimension,obj2.dimension+3);
 
-	keyobj.theta=angle1;
-    keyobj.phi=angle2;
-
     R=max(max_len1*s,max_len2*s2)/2;
-    if(isUnProject)
+    R=(max_len1*s)/2;
+    if(isUnProject){
+    	srand(time(NULL));
+    	keyobj.phi=rand()%135;
+    	keyobj.theta=rand()%181;
     	setCamera();
+    }
+    theta_init=keyobj.theta;
+    phi_init=keyobj.phi;
     setObj2Pos('w');
 }
 
@@ -457,65 +472,65 @@ void processMouse(int button, int state, int x, int y){
 }
 
 void processNormalKeys(unsigned char key, int x, int y){
+	char mystr[256];
 
+	switch(key){
+		case 'p':
+			Project();
+			capture_frame(framenum);
 
-	if(key=='p'){
-		Project();
-		capture_frame(framenum);
-		char mystr[256];
-		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
-		keyobj.writeKeypoints(mystr);
-		framenum++;
-	}
+			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
+			keyobj.writeKeypoints(mystr);
+			framenum++;
+		break;
 
-	else if(key=='c'){
-		capture_frame(framenum);
-		char mystr[256];
-		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
-		keyobj.writeKeypoints(mystr);
-		glutLeaveMainLoop();
-	}
+		case 'c':
+			capture_frame(framenum);
+			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
+			keyobj.writeKeypoints(mystr);
+			glutLeaveMainLoop();
+		break;
 
-	else if(key=='q'){
-		glutLeaveMainLoop();
-	}
+		case 'q':
+			glutLeaveMainLoop();
+		break;
 
-	else if(key=='g')
-		genViewPoints();
+		case 'g':
+			genViewPoints();
+		break;
 
-	else if(key=='x'){
-		deletemodel=1;
-		glutLeaveMainLoop();
-	}
+		case 'x':
+			deletemodel=1;
+			glutLeaveMainLoop();
+		break;
 
-	else if(key=='i'){
-		idle();
-	}
-	if(key=='w'){
+		case 'i':
+			idle();
+		break;
 
-		setObj2Pos('w');
+		case 'w':
+			setObj2Pos('w');
+		break;
 
-	}
-	else if(key=='a'){
+		case 'a':
+			setObj2Pos('a');
+		break;
 
-		setObj2Pos('a');
-	}
-	else if(key=='s'){
+		case 's':
+			setObj2Pos('s');
+		break;
 
-		setObj2Pos('s');
-	}
+		case 'd':
+			setObj2Pos('d');
+		break;
 
-	else if(key=='d'){
+		case 'z':
+			cout<<keyobj.eyex<<" "<<keyobj.eyey<<" "<<keyobj.eyez<<" ";
 
-		setObj2Pos('d');
-	}
+			cout<<keyobj.theta<<" "<<keyobj.phi<<" ";
 
-	else if(key=='z'){
-		cout<<keyobj.eyex<<" "<<keyobj.eyey<<" "<<keyobj.eyez<<" ";
-
-		cout<<keyobj.theta<<" "<<keyobj.phi<<" ";
-
-		cout<<keyobj.lx<<" "<<keyobj.ly<<" "<<keyobj.lz<<"\n ";
+			cout<<keyobj.lx<<" "<<keyobj.ly<<" "<<keyobj.lz<<"\n ";
+		break;
 	}
 	glutPostRedisplay();
 }
@@ -605,6 +620,7 @@ void capture_frame(unsigned int framenum){
 }
 
 void setCamera(){
+			R=sqrt(keyobj.eyex*keyobj.eyex+keyobj.eyey*keyobj.eyey+keyobj.eyez*keyobj.eyez);
 			keyobj.eyex=R*sin(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
 			keyobj.eyey=R*cos(keyobj.phi*pi/180);
 			keyobj.eyez=R*cos(keyobj.theta*pi/180)*sin(keyobj.phi*pi/180);
@@ -626,8 +642,8 @@ void genViewPoints(){
 	del1=rand()%maxAngle;
 	del2=rand()%maxAngle;
 
-	keyobj.theta=angle1;
-	keyobj.phi=angle2;
+	keyobj.theta=theta_init;
+	keyobj.phi=phi_init;
 
 	delR=rand()%7;
 	R=R-delR;
@@ -647,8 +663,8 @@ bool isVisible(double x, double y){
 
 void idle(){
 	isProject=true;
-
-	genViewPoints();
+	if(framenum==2)
+		genViewPoints();
 	setCamera();
 	genLightSource(2);
 	glutPostRedisplay();
@@ -688,5 +704,10 @@ void setObj2Pos(unsigned char pos){
 
 }
 
+void reDraw(){
+		obj.includeTexture=true;
+		obj.loadObj(filename1);
+		model1=obj.drawModel();
+}
 
 
