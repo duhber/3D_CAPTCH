@@ -8,7 +8,7 @@ function [ ] = writeImage( Im1,Im2, P, id,method )
     f1=figure;
     imshow(Im1);
     hold on
-    plot(P(1,:), P(2,:), 'ro');
+    plot(P(1,:), P(2,:), 'rx');
     saveas(f1,fname1,'jpg');
 
     close
@@ -16,7 +16,7 @@ function [ ] = writeImage( Im1,Im2, P, id,method )
     f2=figure;
     imshow(Im2);
     hold on
-    plot(P(3,:), P(4,:), 'ro');
+    plot(P(3,:), P(4,:), 'rx');
     saveas(f2,fname2,'jpg');
     
     close

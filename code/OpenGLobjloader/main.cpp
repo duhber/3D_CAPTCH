@@ -150,6 +150,7 @@ int main(int argc, char **argv){
     cout<<argv[5]<<endl;
     texfile=argv[5];
     texfile2=argv[6];
+    obj.includeTexture=true;
     if(argc==8){
         pname=argv[7];
         int l;
@@ -157,8 +158,6 @@ int main(int argc, char **argv){
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
         	isUnProject=false;
-
-        	obj2.includeTexture=true;
         	//isProject=true;
         	isCapture=false;
 
@@ -242,7 +241,7 @@ void display(){
     glPopMatrix();
 
 
-    if(mode[0]=='d'){
+    /*if(mode[0]=='d'){
     	//cout<<"true"<<endl;
     	glPushMatrix();
     		glScalef(s2,s2,s2);
@@ -251,7 +250,7 @@ void display(){
     		glCallList(model2);
     	glPopMatrix();
 
-    }
+    }*/
 
     if(!isUnProject){
     	unProject();
@@ -278,7 +277,7 @@ void display(){
 		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
 		keyobj.writeKeypoints(mystr);
 		if(visibility>50.0){
-			reDraw();
+			//reDraw();
 			framenum++;
 		}
     }
@@ -360,8 +359,8 @@ void init(){
     obj.loadObj(filename1);
     model1=obj.drawModel();
 
-    obj2.loadObj(filename2);
-    model2=obj2.drawModel();
+    //obj2.loadObj(filename2);
+    //model2=obj2.drawModel();
 
     bg1.loadTexture(texfile);
     tex1=bg1.drawBG();
@@ -387,7 +386,7 @@ void init(){
 
     // scale object2
 
-    s2=30.0/obj2.dimension[0];
+    //s2=30.0/obj2.dimension[0];
     /*obj2.dimension[0]=s2*obj2.dimension[0];
     obj2.dimension[1]=s2*obj2.dimension[1];
     obj2.dimension[2]=s2*obj2.dimension[2];
@@ -406,7 +405,7 @@ void init(){
     }
     theta_init=keyobj.theta;
     phi_init=keyobj.phi;
-    setObj2Pos('w');
+    //setObj2Pos('w');
 }
 
 void reshape(int w, int h){

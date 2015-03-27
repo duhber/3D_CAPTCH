@@ -22,29 +22,23 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=6;
+    numModel=332;
     
     modelDir='../frame/%d/frame_000%d.';
     
     r=25; %radius of toleramce
     
     count=0;
-    correct=0;
-    
-    errorcount=0;
-    
-    modelCount=0;
-    modelCorrect=0;
-    modelAccuracy=0;
    
     modelStat=zeros(numModel,4);
     save=0;
+    MOTEST=0;
+    NRSIFT=0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for model=1001:1000+numModel
     disp(model);
     modelCount=0;
-    modelCorrect=0;
     
     for frame1=1:1
         
@@ -101,13 +95,13 @@ for model=1001:1000+numModel
             
             
             %%%%%% compute the sift descriptor of the two frame %%%%%%%%%%%
-%             [image1, des1, locs1]=sift(I1);
-%             [image2, des2, locs2]=sift(I2);
+            [image1, des1, locs1]=sift(I1);
+            [image2, des2, locs2]=sift(I2);
             
             
-%             if size(des2,1)==0
-%                 continue;
-%             end            
+            if size(des2,1)==0
+                continue;
+            end            
             
                             
             numpoints=size(frameKeyPoints1,1);
@@ -138,10 +132,10 @@ for model=1001:1000+numModel
                 goodKeyPoints2(modelCount,2)=y2;
                 
             end
-            count=modelCount+count;
+            count=count+1;
             
             
-            %find the best challenge points
+            %find the best challenge points            
             
             initialFrame=sprintf(strcat(modelDir,'jpg'),model,0);
             
@@ -153,8 +147,54 @@ for model=1001:1000+numModel
             tempPoints=locs(:,1:2)';
             siftPoints(1,:)=tempPoints(2,:);
             siftPoints(2,:)=tempPoints(1,:);
+     
+            idx=selectBestPoint(siftPoints',fastPoints');
+           
             
-            plotPoints(I,fastPoints,siftPoints,model);
+            x1=goodKeyPoints1(idx,1);
+            y1=goodKeyPoints1(idx,2);
+            
+            x2=goodKeyPoints2(idx,1);
+            y2=goodKeyPoints2(idx,2);
+            
+            
+            % using nearest sift
+            
+            trackPoint=nearestSIFTmethod([x1 y1],des1,locs1,des2,locs2);
+            
+            if numel(trackPoint)~=0
+               
+                d=((x2-trackPoint(1))^2+(y2-trackPoint(2))^2)^0.5;
+                
+                if d<=25.0
+                    NRSIFT=NRSIFT+1;
+                end
+                
+            end
+            
+            sift_track_point=trackPoint;
+            
+            
+            %using motion estimation
+            
+            trackPoint=motionEstimation([x1 y1],des1,locs1,des2,locs2);
+            
+            
+            if numel(trackPoint)~=0
+               
+                d=((x2-trackPoint(1))^2+(y2-trackPoint(2))^2)^0.5;
+                
+                if d<=25.0
+                    MOTEST=MOTEST+1;
+                end
+                
+            end
+            
+            plotPoints(I,fastPoints,siftPoints,[x1 y1],sift_track_point,trackPoint, model); 
+            
+            
+            
+            
             clear tempPoints fastPoints siftPoints goodKeyPoints1 goodKeyPoints2
             
         end
@@ -164,3 +204,13 @@ for model=1001:1000+numModel
     
 end
 
+
+disp('nearest sift');
+NRSIFT_accu=(NRSIFT/count)*100;
+disp(NRSIFT_accu);
+
+
+disp('motion estimation');
+
+MOTEST_accu=(MOTEST/count)*100;
+disp(MOTEST_accu);

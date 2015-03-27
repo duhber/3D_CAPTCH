@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=165;
+    numModel=6;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -234,7 +234,7 @@ for model=1001:1000+numModel
     if modelCorrect ~=0
         writeImage(I1,I2,correctPoints,model,'Nearest_SIFT_');
     end
-    
+    clear correctPoints goodKeyPoints1 goodKeyPoints2
     modelStat(model-1000,:)=[model modelCount modelCorrect modelAccuracy];
     
 end

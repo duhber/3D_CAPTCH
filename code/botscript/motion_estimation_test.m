@@ -19,7 +19,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=165;
+    numModel=6;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -35,7 +35,7 @@ clear all;
     modelAccuracy=0;
    
     modelStat=zeros(numModel,4);
-    save=1;
+    save=0;
     
 %     frame=sprintf(strcat(modelDir,'jpg'),model,0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -174,7 +174,7 @@ for model=1001:numModel+1000
     if modelCorrect ~=0
         writeImage(I1,I2,correctPoints,model,'MOT_EST_');
     end
-    
+    clear correctPoints
 end
 
 disp(count);
