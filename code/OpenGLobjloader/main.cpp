@@ -67,6 +67,9 @@ void processNormalKeys(unsigned char key, int x, int y);
 void unProject();
 void Project();
 
+void unProject(const vector<projectedKey*> &point2D,vector<unprojectedKey*> &point3D );
+void Project(const vector<unprojectedKey*> &point3D, vector<projectedKey*> &point2D );
+
 void capture_frame(unsigned int);
 
 void setCamera();
@@ -134,6 +137,12 @@ int maxAngle=47;
 
 float theta_init;
 float phi_init;
+
+vector<vector<projectedKey*> >sample2Dpoints;
+vector<vector<unprojectedKey*> >sample3Dpoints;
+vector<projectedKey>pointI1;
+void genSamplingPoints();
+void genDistortion();
 /** ******************************************************************************* **/
 
 
@@ -253,6 +262,7 @@ void display(){
     }*/
 
     if(!isUnProject){
+    	genSamplingPoints();
     	unProject();
 
     	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
@@ -272,17 +282,22 @@ void display(){
 
     if(isProject){
 		Project();
-		capture_frame(framenum);
-		char mystr[256];
-		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
-		keyobj.writeKeypoints(mystr);
+
 		if(visibility>50.0){
+			capture_frame(framenum);
+			char mystr[256];
+			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
+			if(framenum==2)
+				genDistortion();
+			keyobj.writeKeypoints(mystr);
 			//reDraw();
+
 			framenum++;
 		}
     }
 
     if(framenum==3){
+
     	cout<<filename1<<endl;
     	glutLeaveMainLoop();
 
@@ -599,6 +614,54 @@ void Project(){
 	cout<<modelno<<" "<<visibility<<endl;
 }
 
+void unProject(const vector<projectedKey*> &point2D,vector<unprojectedKey*> &point3D ){
+
+	GLint viewport[4];
+	GLdouble modelview[16];
+	GLdouble projection[16];
+	GLfloat winX, winY, winZ;
+	float x,y;
+
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	glGetIntegerv( GL_VIEWPORT, viewport );
+
+	for(int i=0;i<point2D.size();i++){
+		x=point2D[i]->x;
+		y=point2D[i]->y;
+
+		winX = (float)x;
+		winY = (float)viewport[3] - (float)y;
+		glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
+
+		gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+
+		point3D.push_back(new unprojectedKey(posX,posY,posZ));
+	}
+
+}
+void Project(const vector<unprojectedKey*> &point3D, vector<projectedKey*> &point2D ){
+
+	GLint viewport[4];
+	GLdouble modelview[16];
+	GLdouble projection[16];
+	GLdouble winX, winY, winZ;
+
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	glGetIntegerv( GL_VIEWPORT, viewport );
+
+	for(int i=0;i<point3D.size();i++){
+		posX=point3D[i]->x;
+		posY=point3D[i]->y;
+		posZ=point3D[i]->z;
+
+		gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
+		winY = (double)viewport[3] - winY;
+		point2D.push_back(new projectedKey(winX,winY));
+	}
+
+}
 void capture_frame(unsigned int framenum){
 
   //global pointer float *pRGB
@@ -720,4 +783,102 @@ void reDraw(){
 		model1=obj.drawModel();
 }
 
+void genSamplingPoints(){
 
+
+
+	float x,y,px,py;
+	vector<unprojectedKey*>point3D;
+	vector<projectedKey*>point2D;
+	for(int i=0;i<keyobj.keypoints.size();i++){
+
+
+		px=keyobj.keypoints[i]->x;
+		py=keyobj.keypoints[i]->y;
+
+		pointI1.push_back(*keyobj.keypoints[i]);
+
+		for(float r=20.0;r<=200.0;r+=20.0){
+			for(float angle=0.0;angle<360.0;angle+=20.0){
+				x=px+r*cos(angle*pi/180.0);
+				y=py+r*sin(angle*pi/180.0);
+				if(isVisible(x,y))
+					point2D.push_back(new projectedKey(x,y));
+
+			}
+		}
+		unProject(point2D, point3D);
+		//cout<<point2D.size()<<" "<<point3D.size()<<endl;
+		sample2Dpoints.push_back(point2D);
+		sample3Dpoints.push_back(point3D);
+
+		point3D.clear();
+		point2D.clear();
+
+	}
+}
+
+void genDistortion(){
+	char cpname[256];
+	sprintf(cpname,"%s/candidatePoints.cp",modelno);
+	ofstream out(cpname);
+	float d1,d2,d,  px1,py1,px2,py2,qx1,qx2,qy1,qy2;
+
+	double sumDistortion;
+	vector<projectedKey*>point2D;
+
+
+
+	for(int i=0;i<pointI1.size();i++){
+
+
+		px1=pointI1[i].x;
+		py1=pointI1[i].y;
+
+		px2=keyobj.keypoints[i]->x;
+		py2=keyobj.keypoints[i]->y;
+		cout<<px2<<" "<<py2<<endl;
+		if(!isVisible(px2,py2))
+			continue;
+
+		Project(sample3Dpoints[i], point2D);
+		sumDistortion=0.0;
+
+		for(int j=0;j<point2D.size();j++){
+
+			qx1=sample2Dpoints[i][j]->x;
+			qy1=sample2Dpoints[i][j]->y;
+
+			qx2=point2D[j]->x;
+			qy2=point2D[j]->y;
+
+			d1=sqrt(pow(px1-qx1,2)+pow(py1-qy1,2));
+			d2=sqrt(pow(px2-qx2,2)+pow(py2-qy2,2));
+
+			d=abs(d1-d2);
+			sumDistortion+=double(d);
+			//cout<<d<<endl;
+		}
+		for(int j=0;j<point2D.size();j++){
+			delete point2D[j];
+		}
+		point2D.clear();
+
+		out<<px1<<" "<<py1<<" "<<px2<<" "<<py2<<" "<<sumDistortion<<endl;
+
+
+
+	}
+	out.close();
+
+	for(int i=0;i<sample2Dpoints.size();i++){
+		for(int j=0;j<sample2Dpoints[i].size();j++){
+			delete sample2Dpoints[i][j];
+			delete sample3Dpoints[i][j];
+		}
+	}
+	sample2Dpoints.clear();
+	sample3Dpoints.clear();
+
+
+}
