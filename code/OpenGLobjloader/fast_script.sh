@@ -2,7 +2,7 @@
 
 dir=$1
 stopPoint=$2
-modeldir="model"
+modeldir="badmodel"
 texdir="texture"
 for i in $(ls $modeldir|grep '\.obj$');do
     
@@ -81,4 +81,5 @@ for i in $(ls $modeldir|grep '\.obj$');do
             fi
 
         done
+		break
 done
