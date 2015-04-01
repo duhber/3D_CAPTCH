@@ -75,9 +75,13 @@ void capture_frame(unsigned int);
 void setCamera();
 
 bool isVisible(double x, double y);
+bool isObjectPoint(double x, double y, double z);
+
 
 void genLightSource(int numOfLight);
 void genViewPoints();
+void initialViewPoints();
+
 void reDraw();
 
 void setObj2Pos(unsigned char c);
@@ -85,9 +89,13 @@ void setObj2Pos(unsigned char c);
 void idle();
 
 
+
+int drawFastPoints();
+
+void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2, float px1, float py1, float px2, float py2);
 /* ************** global variables ********************** */
 
-unsigned int model1,model2,bgid,tex1,tex2;// object to render
+unsigned int model1,model2,bgid,tex1,tex2, fpoint;// object to render
 static GLfloat spin=0.0;
 
 char *filename1, *filename2, *texfile, *texfile2;
@@ -102,7 +110,7 @@ char unpFileName[26];
 objloader obj,obj2;
 backgroundTexture bg1,bg2;
 
-
+bool draw=false;
 
 bool deletemodel=0;
 
@@ -113,7 +121,7 @@ unsigned char axis;// 1-> x-axis  2->z-axis
 readwritekeypoints keyobj(15.0, 1.0, 15.0, 0.0, 90.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
 
 int mx=0,my=0;
-GLdouble posX=0.0, posY=0.0, posZ=0.0;
+
 
 bool recording=true;
 unsigned int framenum=0;
@@ -122,8 +130,8 @@ unsigned char *pRGB;
 int SCREEN_WIDTH=600;
 int SCREEN_HEIGHT=400;
 
-bool isUnProject=true;
-bool isCapture=true;
+bool isUnProject=false;
+bool isCapture=false;
 bool isProject=false;
 
 
@@ -143,6 +151,8 @@ vector<vector<unprojectedKey*> >sample3Dpoints;
 vector<projectedKey>pointI1;
 void genSamplingPoints();
 void genDistortion();
+
+vector<GLint> listvec;
 /** ******************************************************************************* **/
 
 
@@ -166,9 +176,9 @@ int main(int argc, char **argv){
         l=strlen(pname);
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
-        	isUnProject=false;
+        	//isUnProject=true;
         	//isProject=true;
-        	isCapture=false;
+        	//isCapture=false;
 
         }
 
@@ -195,11 +205,12 @@ int main(int argc, char **argv){
     glutSpecialFunc(processSpecialKeys);
     glutMouseFunc(processMouse);
     glutKeyboardFunc(processNormalKeys);
-    glutIdleFunc(idle);
+    //glutIdleFunc(idle);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
                   GLUT_ACTION_GLUTMAINLOOP_RETURNS);
     glutMainLoop();
-
+    for(int i=0;i<listvec.size();i++)
+    glDeleteLists(listvec[i],1);
     if(deletemodel)
     	return -1;
     else
@@ -234,7 +245,7 @@ void display(){
     /* *******************render scene here ***************************/
 
 
-    if(mode[1]=='t' && isUnProject){
+    if(mode[1]=='t' && !isUnProject && false){
     	glPushMatrix();
     		glScalef(R*3,R*3,R*3);
     		//glTranslatef(-0.5,-0.5,-1.0);
@@ -242,12 +253,16 @@ void display(){
         glPopMatrix();
     }
 
+    if(draw)
+       	glCallList(fpoint);
+    else{
     glPushMatrix();
     	glScalef(s,s,s);
     	glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y,-obj.center_of_body->z);
 
     	glCallList(model1);
     glPopMatrix();
+    }
 
 
     /*if(mode[0]=='d'){
@@ -259,16 +274,16 @@ void display(){
     		glCallList(model2);
     	glPopMatrix();
 
-    }*/
+    }
 
-    if(!isUnProject){
-    	genSamplingPoints();
+    if(isUnProject){
+    	//genSamplingPoints();
     	unProject();
 
     	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
     	keyobj.writeObjpoints(unpFileName);
     	framenum++;
-    	isUnProject=true;
+    	isUnProject=false;
     }
 
     if(isCapture){
@@ -287,8 +302,8 @@ void display(){
 			capture_frame(framenum);
 			char mystr[256];
 			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
-			if(framenum==2)
-				genDistortion();
+//			if(framenum==2)
+//				genDistortion();
 			keyobj.writeKeypoints(mystr);
 			//reDraw();
 
@@ -296,7 +311,7 @@ void display(){
 		}
     }
 
-    if(framenum==3){
+    if(framenum==2){
 
     	cout<<filename1<<endl;
     	glutLeaveMainLoop();
@@ -314,7 +329,7 @@ void init(){
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-    //glEnable(GL_LIGHT1);
+    glEnable(GL_LIGHT1);
     /*glEnable(GL_LIGHT2);
     glEnable(GL_LIGHT3);
     glEnable(GL_LIGHT4);
@@ -330,7 +345,7 @@ void init(){
     glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT1,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
+    glLightfv(GL_LIGHT1,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT2,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
@@ -412,15 +427,9 @@ void init(){
 
     //R=max(max_len1*s,max_len2*s2)/2;
     R=(obj.radiusBV)*s;
-    if(isUnProject){
-    	srand(time(NULL));
-    	keyobj.phi=rand()%135;
-    	keyobj.theta=rand()%360;
-    	setCamera();
-    }
-    theta_init=keyobj.theta;
-    phi_init=keyobj.phi;
     //setObj2Pos('w');
+	theta_init=keyobj.theta;
+	phi_init=keyobj.phi;
 }
 
 void reshape(int w, int h){
@@ -503,6 +512,13 @@ void processNormalKeys(unsigned char key, int x, int y){
 			keyobj.writeKeypoints(mystr);
 			framenum++;
 		break;
+		case 'u':
+	    	unProject();
+
+	    	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
+	    	keyobj.writeObjpoints(unpFileName);
+	    	framenum++;
+	    break;
 
 		case 'c':
 			capture_frame(framenum);
@@ -517,6 +533,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 
 		case 'g':
 			genViewPoints();
+			setCamera();
 		break;
 
 		case 'x':
@@ -525,7 +542,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 		break;
 
 		case 'i':
-			idle();
+			initialViewPoints();
 		break;
 
 		case 'w':
@@ -541,7 +558,13 @@ void processNormalKeys(unsigned char key, int x, int y){
 		break;
 
 		case 'd':
-			setObj2Pos('d');
+			if(draw)
+				draw=false;
+			else{
+				fpoint=drawFastPoints();
+				listvec.push_back(fpoint);
+				draw=true;
+			}
 		break;
 
 		case 'z':
@@ -561,7 +584,7 @@ void unProject(){
 	GLdouble projection[16];
 	GLfloat winX, winY, winZ;
 	float x,y;
-
+	GLdouble posX=0.0, posY=0.0, posZ=0.0;
 	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
@@ -590,13 +613,13 @@ void Project(){
 	GLdouble modelview[16];
 	GLdouble projection[16];
 	GLdouble winX, winY, winZ;
-
+	GLdouble posX=0.0, posY=0.0, posZ=0.0;
 	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
 
 	visibility=0.0;
-
+	bool notOccluded;
 	for(int i=0;i<keyobj.objpoints.size();i++){
 		posX=keyobj.objpoints[i]->x;
 		posY=keyobj.objpoints[i]->y;
@@ -604,11 +627,15 @@ void Project(){
 
 		gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
 		winY = (double)viewport[3] - winY;
-		keyobj.keypoints.push_back(new projectedKey(winX,winY));
 
-		if(isVisible(winX,winY)){
+		if(isVisible(winX,winY) and isObjectPoint(posX,posY,posZ)){
 			visibility+=1.0;
+			keyobj.keypoints.push_back(new projectedKey(winX,winY));
 		}
+		else
+			keyobj.keypoints.push_back(new projectedKey(-1.0,-1.0));
+
+
 	}
 	visibility=(visibility*100.0)/keyobj.objpoints.size();
 	cout<<modelno<<" "<<visibility<<endl;
@@ -621,7 +648,7 @@ void unProject(const vector<projectedKey*> &point2D,vector<unprojectedKey*> &poi
 	GLdouble projection[16];
 	GLfloat winX, winY, winZ;
 	float x,y;
-
+	GLdouble posX=0.0, posY=0.0, posZ=0.0;
 	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
@@ -646,7 +673,7 @@ void Project(const vector<unprojectedKey*> &point3D, vector<projectedKey*> &poin
 	GLdouble modelview[16];
 	GLdouble projection[16];
 	GLdouble winX, winY, winZ;
-
+	GLdouble posX=0.0, posY=0.0, posZ=0.0;
 	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
@@ -719,7 +746,7 @@ void genViewPoints(){
 	//R=R-delR;
 
 	keyobj.theta+=del1*sign;
-	keyobj.phi+=del2*sign2;
+	keyobj.phi-=del2*sign2;
 }
 
 bool isVisible(double x, double y){
@@ -730,16 +757,21 @@ bool isVisible(double x, double y){
 		return false;
 }
 
+bool isObjectPoint(double x, double y, double z){
+	double d;
+	d=sqrt(pow(x,2)+pow(y,2)+pow(z,2));
+	if(d>R)
+		return false;
+	else
+		return true;
+}
+
 
 void idle(){
 	isProject=true;
-	bgid=tex1;
-	if(framenum==2){
-		bgid=tex2;
-		genViewPoints();
-	}
+	genViewPoints();
 	setCamera();
-	genLightSource(2);
+	//genLightSource(2);
 	glutPostRedisplay();
 }
 
@@ -827,7 +859,7 @@ void genDistortion(){
 	double sumDistortion;
 	vector<projectedKey*>point2D;
 
-
+	bool test=true;
 
 	for(int i=0;i<pointI1.size();i++){
 
@@ -837,12 +869,19 @@ void genDistortion(){
 
 		px2=keyobj.keypoints[i]->x;
 		py2=keyobj.keypoints[i]->y;
-		cout<<px2<<" "<<py2<<endl;
+		//cout<<px2<<" "<<py2<<endl;
 		if(!isVisible(px2,py2))
 			continue;
 
+
+
 		Project(sample3Dpoints[i], point2D);
 		sumDistortion=0.0;
+
+		if(test){
+			test=false;
+			testPoints(sample2Dpoints[i], point2D, px1, py1, px2, py2);
+		}
 
 		for(int j=0;j<point2D.size();j++){
 
@@ -881,4 +920,56 @@ void genDistortion(){
 	sample3Dpoints.clear();
 
 
+}
+
+void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2,float px1, float py1, float px2, float py2){
+	char f1[256], f2[256];
+	sprintf(f1,"%s/p1",modelno);
+	sprintf(f2,"%s/p2",modelno);
+
+	ofstream o1(f1),o2(f2);
+	o1<<px1<<" "<<py1<<endl;
+	o2<<px2<<" "<<py2<<endl;
+	for(int i=0;i<p1.size();i++){
+		o1<<p1[i]->x<<" "<<p1[i]->y<<endl;
+		o2<<p2[i]->x<<" "<<p2[i]->y<<endl;
+	}
+	o1.close();
+	o2.close();
+
+}
+
+
+void initialViewPoints(){
+	srand(time(NULL));
+	keyobj.phi=rand()%135;
+	keyobj.theta=rand()%360;
+	setCamera();
+	theta_init=keyobj.theta;
+	phi_init=keyobj.phi;
+}
+
+int drawFastPoints(){
+	unsigned int num;
+	num=glGenLists(1);
+	float d,obx,oby,obz;
+
+	glNewList(num,GL_COMPILE);
+		glColor3f(1.0,0.0,0.0);
+		glBegin(GL_POINTS);
+			//cout<<keyobj.objpoints.size()<<endl;
+			for(int i=0;i<keyobj.objpoints.size();i++){
+				/*obx=keyobj.objpoints[i]->x;
+				oby=keyobj.objpoints[i]->y;
+				obz=keyobj.objpoints[i]->z;
+				d=sqrt(pow(obx,2)+pow(oby,2)+pow(obz,2));
+				cout<<d<<" "<<R<< endl;
+				if(d>R)
+					continue;
+				*/
+				glVertex3f(keyobj.objpoints[i]->x, keyobj.objpoints[i]->y, keyobj.objpoints[i]->z);
+			}
+		glEnd();
+	glEndList();
+	return num;
 }
