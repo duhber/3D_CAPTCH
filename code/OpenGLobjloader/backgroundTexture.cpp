@@ -116,9 +116,11 @@ unsigned int backgroundTexture::drawBG(){
 
         glBindTexture(GL_TEXTURE_2D,0);
 	glEndList();
+	listid=num;
 	return num;
 }
 
 backgroundTexture::~backgroundTexture(){
     glDeleteTextures(1,&texid);
+    glDeleteLists(listid,1);
 }

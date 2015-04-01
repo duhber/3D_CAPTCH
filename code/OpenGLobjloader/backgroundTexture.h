@@ -28,6 +28,7 @@ using namespace std;
 class backgroundTexture{
 	private:
 		unsigned int texid;
+		int listid;
 	public:
 		void loadTexture(const char *imgname);
 		unsigned int drawBG();
