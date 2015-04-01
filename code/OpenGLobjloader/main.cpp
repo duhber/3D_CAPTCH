@@ -75,6 +75,8 @@ void capture_frame(unsigned int);
 void setCamera();
 
 bool isVisible(double x, double y);
+bool isObjectPoint(double x, double y, double z);
+
 
 void genLightSource(int numOfLight);
 void genViewPoints();
@@ -84,6 +86,7 @@ void setObj2Pos(unsigned char c);
 
 void idle();
 
+void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2, float px1, float py1, float px2, float py2);
 
 /* ************** global variables ********************** */
 
@@ -122,7 +125,7 @@ unsigned char *pRGB;
 int SCREEN_WIDTH=600;
 int SCREEN_HEIGHT=400;
 
-bool isUnProject=true;
+bool isUnProject=false;
 bool isCapture=true;
 bool isProject=false;
 
@@ -166,7 +169,7 @@ int main(int argc, char **argv){
         l=strlen(pname);
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
-        	isUnProject=false;
+        	isUnProject=true;
         	//isProject=true;
         	isCapture=false;
 
@@ -234,7 +237,7 @@ void display(){
     /* *******************render scene here ***************************/
 
 
-    if(mode[1]=='t' && isUnProject){
+    if(mode[1]=='t' && (framenum==1 || framenum==3)){
     	glPushMatrix();
     		glScalef(R*3,R*3,R*3);
     		//glTranslatef(-0.5,-0.5,-1.0);
@@ -261,14 +264,14 @@ void display(){
 
     }*/
 
-    if(!isUnProject){
+    if(isUnProject){
     	genSamplingPoints();
     	unProject();
 
     	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
     	keyobj.writeObjpoints(unpFileName);
     	framenum++;
-    	isUnProject=true;
+    	isUnProject=false;
     }
 
     if(isCapture){
@@ -296,7 +299,7 @@ void display(){
 		}
     }
 
-    if(framenum==3){
+    if(framenum==4){
 
     	cout<<filename1<<endl;
     	glutLeaveMainLoop();
@@ -412,7 +415,7 @@ void init(){
 
     //R=max(max_len1*s,max_len2*s2)/2;
     R=(obj.radiusBV)*s;
-    if(isUnProject){
+    if(!isUnProject){
     	srand(time(NULL));
     	keyobj.phi=rand()%135;
     	keyobj.theta=rand()%360;
@@ -596,7 +599,7 @@ void Project(){
 	glGetIntegerv( GL_VIEWPORT, viewport );
 
 	visibility=0.0;
-
+	int nOutliers=0;
 	for(int i=0;i<keyobj.objpoints.size();i++){
 		posX=keyobj.objpoints[i]->x;
 		posY=keyobj.objpoints[i]->y;
@@ -604,13 +607,27 @@ void Project(){
 
 		gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
 		winY = (double)viewport[3] - winY;
-		keyobj.keypoints.push_back(new projectedKey(winX,winY));
 
-		if(isVisible(winX,winY)){
+		bool notObjPoint;
+		notObjPoint=!isObjectPoint(posX,posY,posZ);
+
+		if(isVisible(winX,winY) and  !notObjPoint){
 			visibility+=1.0;
+			keyobj.keypoints.push_back(new projectedKey(winX,winY));
 		}
+		else
+			keyobj.keypoints.push_back(new projectedKey(-1.0,-1.0));
+
+
+		if(notObjPoint)
+			nOutliers++;
+
+
 	}
-	visibility=(visibility*100.0)/keyobj.objpoints.size();
+
+
+
+	visibility=(visibility*100.0)/(keyobj.objpoints.size()-nOutliers);
 	cout<<modelno<<" "<<visibility<<endl;
 }
 
@@ -730,10 +747,20 @@ bool isVisible(double x, double y){
 		return false;
 }
 
+bool isObjectPoint(double x, double y, double z){
+	double d;
+	d=sqrt(pow(x,2)+pow(y,2)+pow(z,2));
+	if(d>R)
+		return false;
+	else
+		return true;
+}
+
 
 void idle(){
 	isProject=true;
-	bgid=tex1;
+	if(framenum==1)
+		bgid=tex1;
 	if(framenum==2){
 		bgid=tex2;
 		genViewPoints();
@@ -827,7 +854,7 @@ void genDistortion(){
 	double sumDistortion;
 	vector<projectedKey*>point2D;
 
-
+	bool test=true;
 
 	for(int i=0;i<pointI1.size();i++){
 
@@ -837,13 +864,18 @@ void genDistortion(){
 
 		px2=keyobj.keypoints[i]->x;
 		py2=keyobj.keypoints[i]->y;
-		cout<<px2<<" "<<py2<<endl;
+		//cout<<px2<<" "<<py2<<endl;
 		if(!isVisible(px2,py2))
 			continue;
 
 		Project(sample3Dpoints[i], point2D);
 		sumDistortion=0.0;
 
+
+		if(test){
+			test=false;
+			//testPoints(sample2Dpoints[i], point2D, px1, py1, px2, py2);
+		}
 		for(int j=0;j<point2D.size();j++){
 
 			qx1=sample2Dpoints[i][j]->x;
@@ -865,9 +897,6 @@ void genDistortion(){
 		point2D.clear();
 
 		out<<px1<<" "<<py1<<" "<<px2<<" "<<py2<<" "<<sumDistortion<<endl;
-
-
-
 	}
 	out.close();
 
@@ -879,6 +908,20 @@ void genDistortion(){
 	}
 	sample2Dpoints.clear();
 	sample3Dpoints.clear();
+}
 
 
+void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2,float px1, float py1, float px2, float py2){
+	char f1[256], f2[256];
+	sprintf(f1,"%s/p1",modelno);
+	sprintf(f2,"%s/p2",modelno);
+	ofstream o1(f1),o2(f2);
+	o1<<px1<<" "<<py1<<endl;
+	o2<<px2<<" "<<py2<<endl;
+	for(int i=0;i<p1.size();i++){
+		o1<<p1[i]->x<<" "<<p1[i]->y<<endl;
+		o2<<p2[i]->x<<" "<<p2[i]->y<<endl;
+	}
+	o1.close();
+	o2.close();
 }
