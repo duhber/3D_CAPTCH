@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=996;
+    numModel=10;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -48,7 +48,7 @@ for model=1001:1000+numModel
             continue;
         end
         
-        for frame2=2:2%frame1+1:1
+        for frame2=3:3%frame1+1:1
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -196,8 +196,10 @@ for model=1001:1000+numModel
                 end
                 
             end
-            plotPoints(I1,[],[],[x1 y1],[],[], model, 'left'); 
-            plotPoints(I2,[],[],[x2 y2],sift_track_point,trackPoint, model, 'right'); 
+            leftI=sprintf('%d_left',i);
+            rightI=sprintf('%d_right',i);
+            plotPoints(I1,[],[],[x1 y1],[],[], model, leftI); 
+            plotPoints(I2,[],[],[x2 y2],sift_track_point,trackPoint, model, rightI); 
             
             
             end
