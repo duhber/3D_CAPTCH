@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=5;
+    numModel=7;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -36,11 +36,11 @@ clear all;
     MOTEST = zeros(numModel,11);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model=1001:1000+numModel
+for model=101:100+numModel
     disp(model);
     modelCount=0;
     
-    for frame1=0:0
+    for frame1=1:1
         
         f1=sprintf(strcat(modelDir,'jpg'),model,frame1);
         
@@ -48,7 +48,7 @@ for model=1001:1000+numModel
             continue;
         end
         
-        for frame2=2:2%frame1+1:1
+        for frame2=3:3%frame1+1:1
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -141,16 +141,16 @@ for model=1001:1000+numModel
 %             pointR=importdata(p2,' ');
 %             pointL=pointL';
 %             pointR=pointR';
-            cpfilename=sprintf('../frame/%d/candidatePoints.cp',model);
+            cpfilename=sprintf('../frame/%d/challengepoint',model);
             
-            cp=importdata(cpfilename,' ');
-            cp=cp';
+            cp=importdata(cpfilename)+1;
+            
             f1=figure;
             imshow(I1);
             hold on
 %              plot(pointL(1,:), pointL(2,:), 'rx');
-             plot(cp(1,:), cp(2,:),'rx');
-%             plot(goodKeyPoints1(1,:), goodKeyPoints1(2,:), 'rx');
+%              plot(cp(1,:), cp(2,:),'rx');
+             plot(frameKeyPoints1(cp,1), frameKeyPoints1(cp,2), 'rx');
             
             saveas(f1,p1,'jpg');
             
@@ -161,8 +161,8 @@ for model=1001:1000+numModel
             hold on
 %              plot(pointR(1,1), pointR(2,1), 'bx');
 %              plot(pointR(1,2:size(pointL,2)), pointR(2,2:size(pointL,2)), 'rx');
-               plot(cp(3,:), cp(4,:),'rx');
-%             plot(goodKeyPoints2(1,:), goodKeyPoints2(2,:), 'rx');
+%                plot(cp(3,:), cp(4,:),'rx');
+            plot(frameKeyPoints2(cp,1), frameKeyPoints2(cp,2), 'rx');
             saveas(f2,p2,'jpg');                
             clear goodKeyPoints1 goodKeyPoints2
 %             close

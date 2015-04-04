@@ -88,9 +88,12 @@ void idle();
 
 void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2, float px1, float py1, float px2, float py2);
 
+void selectChallengePoint();
+
+unsigned int occluder();
 /* ************** global variables ********************** */
 
-unsigned int model1,model2,bgid,tex1,tex2;// object to render
+unsigned int model1,model2,bgid,tex1,tex2,occBody;// object to render
 static GLfloat spin=0.0;
 
 char *filename1, *filename2, *texfile, *texfile2;
@@ -129,17 +132,17 @@ bool isUnProject=false;
 bool isCapture=true;
 bool isProject=false;
 
-
 float visibility;
 
 float position[3];// position for model2
 
 float  d12=0.0, R;// distance between the model
 
-int maxAngle=47;
+int maxAngle=31;
 
 float theta_init;
 float phi_init;
+int pointIndex;
 
 vector<vector<projectedKey*> >sample2Dpoints;
 vector<vector<unprojectedKey*> >sample3Dpoints;
@@ -245,6 +248,15 @@ void display(){
         glPopMatrix();
     }
 
+    if(framenum==3){
+    	glPushMatrix();
+
+    	glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
+    	//glScalef(2,R/4,2);
+    	glCallList(occBody);
+    	glPopMatrix();
+   }
+
     glPushMatrix();
     	glScalef(s,s,s);
     	glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y,-obj.center_of_body->z);
@@ -265,7 +277,7 @@ void display(){
     }*/
 
     if(isUnProject){
-    	genSamplingPoints();
+    	//genSamplingPoints();
     	unProject();
 
     	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
@@ -290,12 +302,19 @@ void display(){
 			capture_frame(framenum);
 			char mystr[256];
 			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
-			if(framenum==2)
-				genDistortion();
+			if(framenum==2){
+				selectChallengePoint();
+				//genDistortion();
+			}
 			keyobj.writeKeypoints(mystr);
 			//reDraw();
 
 			framenum++;
+		}
+		else{
+			for(int i=0;i<keyobj.keypoints.size();i++)
+				delete keyobj.keypoints[i];
+			keyobj.keypoints.clear();
 		}
     }
 
@@ -414,7 +433,7 @@ void init(){
     //max_len2=*max_element(obj2.dimension,obj2.dimension+3);
 
     //R=max(max_len1*s,max_len2*s2)/2;
-    R=(obj.radiusBV)*s;
+    R=(obj.radiusBV)*s*(2.0/3.0);
     if(!isUnProject){
     	srand(time(NULL));
     	keyobj.phi=rand()%135;
@@ -424,6 +443,8 @@ void init(){
     theta_init=keyobj.theta;
     phi_init=keyobj.phi;
     //setObj2Pos('w');
+
+    occBody=occluder();
 }
 
 void reshape(int w, int h){
@@ -726,8 +747,8 @@ void genViewPoints(){
 
 	float del1,del2, delR;
 
-	del1=rand()%maxAngle;
-	del2=rand()%maxAngle;
+	del1=rand()%maxAngle+20.0;
+	del2=rand()%maxAngle+20.0;
 
 	keyobj.theta=theta_init;
 	keyobj.phi=phi_init;
@@ -759,14 +780,14 @@ bool isObjectPoint(double x, double y, double z){
 
 void idle(){
 	isProject=true;
-	if(framenum==1)
+
 		bgid=tex1;
 	if(framenum==2){
-		bgid=tex2;
+		//bgid=tex2;
 		genViewPoints();
 	}
 	setCamera();
-	genLightSource(2);
+	genLightSource(3);
 	glutPostRedisplay();
 }
 
@@ -925,3 +946,40 @@ void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2,f
 	o1.close();
 	o2.close();
 }
+
+
+unsigned int occluder(){
+	unsigned int k;
+	k=glGenLists(1);
+	//GLfloat mat_spc[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat mat_amb[] = { 0.1, 0.0, 0.0, 0.5 };
+	GLfloat mat_dif[] = { 0.7, 0.0, 0.0, 1.0 };
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
+	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
+	glNewList(k,GL_COMPILE);
+	glutSolidCube(2.0);
+	glEndList();
+	return k;
+}
+
+
+void selectChallengePoint(){
+	int totalPoint;
+	totalPoint=keyobj.keypoints.size();
+	cout<<totalPoint<<endl;
+	srand(time(NULL));
+	while(1){
+		pointIndex=rand()%totalPoint;
+		cout<<keyobj.keypoints[pointIndex]->x<<" "<<keyobj.keypoints[pointIndex]->y<<endl;
+		if (isVisible(keyobj.keypoints[pointIndex]->x, keyobj.keypoints[pointIndex]->y))
+			break;
+	}
+	cout<<pointIndex<<endl;
+	char cpointname[256];
+	sprintf(cpointname,"%s/challengepoint",modelno);
+	ofstream o(cpointname);
+	o<<pointIndex<<endl;
+	o.close();
+}
+
