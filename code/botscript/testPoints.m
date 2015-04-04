@@ -132,11 +132,9 @@ for model=101:100+numModel
                             
                      
             
-            p1=sprintf('../frame/%d/p1',model);
-            
-       
-            p2=sprintf('../frame/%d/p2',model);
-            
+            cp=sprintf('../frame/%d/challengepoint',model);
+            pointIndex=importdata(cp);
+            cp2=sprintf('../frame/%d/challengepoint2',model);
 %             pointL=importdata(p1,' ');
 %             pointR=importdata(p2,' ');
 %             pointL=pointL';
@@ -150,9 +148,9 @@ for model=101:100+numModel
             hold on
 %             plot(pointL(1,:), pointL(2,:), 'rx');
 %             plot(cp(34,1), cp(34,2),'rx');
-            plot(goodKeyPoints1(1,:), goodKeyPoints1(2,:), 'rx');
+            plot(frameKeyPoints1(pointIndex,1), frameKeyPoints1(pointIndex,2), 'rx');
             
-            saveas(f1,p1,'jpg');
+            saveas(f1,cp,'jpg');
             
 %             close
             
@@ -162,8 +160,8 @@ for model=101:100+numModel
 %             plot(pointR(1,1), pointR(2,1), 'bx');
 %             plot(pointR(1,2:size(pointL,2)), pointR(2,2:size(pointL,2)), 'rx');
 %                plot(cp(34,3), cp(34,4),'rx');
-            plot(goodKeyPoints2(1,:), goodKeyPoints2(2,:), 'rx');
-            saveas(f2,p2,'jpg');                
+            plot(frameKeyPoints2(pointIndex,1), frameKeyPoints2(pointIndex,2), 'rx');
+            saveas(f2,cp2,'jpg');                
             clear goodKeyPoints1 goodKeyPoints2
 %             close
         end

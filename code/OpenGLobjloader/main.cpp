@@ -88,14 +88,14 @@ void setObj2Pos(unsigned char c);
 
 void idle();
 
-
+unsigned int occluder();
 
 int drawFastPoints();
 
 void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2, float px1, float py1, float px2, float py2);
 /* ************** global variables ********************** */
 
-unsigned int model1,model2,bgid,tex1,tex2, fpoint;// object to render
+unsigned int model1,model2,bgid,tex1,tex2, fpoint, occBody;// object to render
 static GLfloat spin=0.0;
 
 char *filename1, *filename2, *texfile, *texfile2;
@@ -133,7 +133,7 @@ int SCREEN_HEIGHT=400;
 bool isUnProject=false;
 bool isCapture=false;
 bool isProject=false;
-
+bool occlude=false;
 
 float visibility;
 
@@ -146,11 +146,17 @@ int maxAngle=47;
 float theta_init;
 float phi_init;
 
+int pointIndex;
+
 vector<vector<projectedKey*> >sample2Dpoints;
 vector<vector<unprojectedKey*> >sample3Dpoints;
 vector<projectedKey>pointI1;
+
 void genSamplingPoints();
+
 void genDistortion();
+
+void selectChallengePoint();
 
 vector<GLint> listvec;
 /** ******************************************************************************* **/
@@ -264,7 +270,14 @@ void display(){
     glPopMatrix();
     }
 
+    if(occlude){
+    glPushMatrix();
 
+    	glScalef(1,R,1);
+    	glTranslatef(keyobj.objpoints[pointIndex]->x,0.0, keyobj.objpoints[pointIndex]->z);
+    	glCallList(occBody);
+    glPopMatrix();
+    }
     /*if(mode[0]=='d'){
     	//cout<<"true"<<endl;
     	glPushMatrix();
@@ -430,6 +443,8 @@ void init(){
     //setObj2Pos('w');
 	theta_init=keyobj.theta;
 	phi_init=keyobj.phi;
+
+	occBody=occluder();
 }
 
 void reshape(int w, int h){
@@ -509,6 +524,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 			capture_frame(framenum);
 
 			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
+			selectChallengePoint();
 			keyobj.writeKeypoints(mystr);
 			framenum++;
 		break;
@@ -555,6 +571,12 @@ void processNormalKeys(unsigned char key, int x, int y){
 
 		case 's':
 			setObj2Pos('s');
+		break;
+
+		case 'o':
+			cout<<"asdfasdf"<<endl;
+
+			occlude=true;
 		break;
 
 		case 'd':
@@ -973,3 +995,40 @@ int drawFastPoints(){
 	glEndList();
 	return num;
 }
+
+unsigned int occluder(){
+	unsigned int k;
+	k=glGenLists(1);
+
+	//GLfloat mat_spc[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat mat_amb[] = { 0.1, 0.0, 0.0, 0.5 };
+	GLfloat mat_dif[] = { 0.7, 0.0, 0.0, 1.0 };
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
+	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
+	glNewList(k,GL_COMPILE);
+		glutSolidCube(1.0);
+	glEndList();
+	return k;
+}
+
+void selectChallengePoint(){
+	int  totalPoint;
+
+	totalPoint=keyobj.keypoints.size();
+	cout<<totalPoint<<endl;
+	srand(time(NULL));
+	while(1){
+		pointIndex=rand()%totalPoint;
+		cout<<keyobj.keypoints[pointIndex]->x<<" "<<keyobj.keypoints[pointIndex]->y<<endl;
+		if (isVisible(keyobj.keypoints[pointIndex]->x, keyobj.keypoints[pointIndex]->y))
+			break;
+	}
+	cout<<pointIndex<<endl;
+	char cpointname[256];
+	sprintf(cpointname,"%s/challengepoint",modelno);
+	ofstream o(cpointname);
+	o<<pointIndex<<endl;
+	o.close();
+}
+
