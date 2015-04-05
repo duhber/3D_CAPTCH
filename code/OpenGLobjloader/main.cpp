@@ -166,6 +166,7 @@ int main(int argc, char **argv){
     texfile=argv[5];
     texfile2=argv[6];
     obj.includeTexture=true;
+    obj2.includeTexture=true;
     if(argc==8){
         pname=argv[7];
         int l;
@@ -250,12 +251,14 @@ void display(){
 
     if(framenum==3){
     	glPushMatrix();
-    	glScalef(s2,s2,s2);
-    	//glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
 
-    	glTranslatef(-obj2.center_of_body->x,-obj2.center_of_body->y,-obj2.center_of_body->z);
+    		glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
 
-    	glCallList(model2);
+    		glScalef(s2,s2,s2);
+
+    		glTranslatef(-obj2.center_of_body->x,-obj2.center_of_body->y,-obj2.center_of_body->z);
+
+    		glCallList(model2);
     	glPopMatrix();
    }
 
@@ -266,6 +269,11 @@ void display(){
     	glCallList(model1);
     glPopMatrix();
 
+	glPushMatrix();
+		glScalef(0.125,50.0,0.125);
+
+		glCallList(occBody);
+	glPopMatrix();
 
     /*if(mode[0]=='d'){
     	//cout<<"true"<<endl;
@@ -425,7 +433,7 @@ void init(){
 
     // scale object2
 
-    s2=2.0/obj2.dimension[0];
+    s2=4.0/obj2.dimension[0];
     /*obj2.dimension[0]=s2*obj2.dimension[0];
     obj2.dimension[1]=s2*obj2.dimension[1];
     obj2.dimension[2]=s2*obj2.dimension[2];
@@ -446,7 +454,7 @@ void init(){
     phi_init=keyobj.phi;
     //setObj2Pos('w');
 
-    //occBody=occluder();
+    occBody=occluder();
 }
 
 void reshape(int w, int h){

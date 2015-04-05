@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=5;
+    numModel=27;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -164,11 +164,16 @@ for model=1001:1000+numModel
                 end
                 
             end
-            leftI=sprintf('%d_left',i);
-            rightI=sprintf('%d_right',i);
+            leftI=sprintf('../frame/%d/left.jpg',model);
+            rightI=sprintf('../frame/%d/right.jpg',model);
+            I1=showPoints(I1,'red',x1,y1,2,[],[]);
+            I2=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint );
+            
+            imwrite(I1,leftI,'jpg');
+            imwrite(I2,rightI,'jpg');
           
-            plotPoints(I1,[],[],[x1 y1],[],[], model, leftI); 
-            plotPoints(I2,[],[],[x2 y2],sift_track_point,trackPoint, model, rightI); 
+%             plotPoints(I1,[],[],[x1 y1],[],[], model, leftI); 
+%             plotPoints(I2,[],[],[x2 y2],sift_track_point,trackPoint, model, rightI); 
             
             clear tempPoints fastPoints siftPoints goodKeyPoints1 goodKeyPoints2
             
