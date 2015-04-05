@@ -250,10 +250,12 @@ void display(){
 
     if(framenum==3){
     	glPushMatrix();
+    	glScalef(s2,s2,s2);
+    	//glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
 
-    	glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
-    	//glScalef(2,R/4,2);
-    	glCallList(occBody);
+    	glTranslatef(-obj2.center_of_body->x,-obj2.center_of_body->y,-obj2.center_of_body->z);
+
+    	glCallList(model2);
     	glPopMatrix();
    }
 
@@ -396,8 +398,8 @@ void init(){
     obj.loadObj(filename1);
     model1=obj.drawModel();
 
-    //obj2.loadObj(filename2);
-    //model2=obj2.drawModel();
+    obj2.loadObj(filename2);
+    model2=obj2.drawModel();
 
     bg1.loadTexture(texfile);
     tex1=bg1.drawBG();
@@ -423,7 +425,7 @@ void init(){
 
     // scale object2
 
-    //s2=30.0/obj2.dimension[0];
+    s2=2.0/obj2.dimension[0];
     /*obj2.dimension[0]=s2*obj2.dimension[0];
     obj2.dimension[1]=s2*obj2.dimension[1];
     obj2.dimension[2]=s2*obj2.dimension[2];
@@ -433,7 +435,7 @@ void init(){
     //max_len2=*max_element(obj2.dimension,obj2.dimension+3);
 
     //R=max(max_len1*s,max_len2*s2)/2;
-    R=(obj.radiusBV)*s*(2.0/3.0);
+    R=(obj.radiusBV)*s*(0.75);
     if(!isUnProject){
     	srand(time(NULL));
     	keyobj.phi=rand()%135;
@@ -444,7 +446,7 @@ void init(){
     phi_init=keyobj.phi;
     //setObj2Pos('w');
 
-    occBody=occluder();
+    //occBody=occluder();
 }
 
 void reshape(int w, int h){
@@ -754,7 +756,6 @@ void genViewPoints(){
 	keyobj.phi=phi_init;
 
 	delR=rand()%7;
-	//R=R-delR;
 
 	keyobj.theta+=del1*sign;
 	keyobj.phi+=del2*sign2;
@@ -958,7 +959,7 @@ unsigned int occluder(){
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
 	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
 	glNewList(k,GL_COMPILE);
-	glutSolidCube(2.0);
+	glutSolidCube(1.50);
 	glEndList();
 	return k;
 }
