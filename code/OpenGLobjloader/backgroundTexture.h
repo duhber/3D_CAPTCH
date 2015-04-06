@@ -28,9 +28,11 @@ using namespace std;
 class backgroundTexture{
 	private:
 		unsigned int texid;
+		unsigned int dpid;
 	public:
 		void loadTexture(const char *imgname);
 		unsigned int drawBG();
+		unsigned int drawTexCube();
 		~backgroundTexture();
 };
 
