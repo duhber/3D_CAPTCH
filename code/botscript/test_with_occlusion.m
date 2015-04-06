@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=27;
+    numModel=598;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -97,8 +97,11 @@ for model=1001:1000+numModel
             [image1, des1, locs1]=sift(I1);
             [image2, des2, locs2]=sift(I2);
             
+            if size(des1,1)<10
+                continue;
+            end
             
-            if size(des2,1)==0
+            if size(des2,1)<10
                 continue;
             end            
             
@@ -121,6 +124,10 @@ for model=1001:1000+numModel
             % using nearest sift
             
             trackPoint=nearestSIFTmethod([x1 y1],des1,locs1,des2,locs2);
+            [leftpoint, rightpoint]=nNearestSiftPoints([x1 y1],des1,locs1,des2,locs2,10);
+            
+            
+           
             
             if numel(trackPoint)~=0
                
@@ -128,6 +135,13 @@ for model=1001:1000+numModel
                 
                 if d<=25.0
                     NRSIFT=NRSIFT+1;
+                    leftI=sprintf('../siftTracked/%d_left.jpg',model);
+                    Ileft=showPoints(I1,'red',x1,y1,2,[],[],leftpoint);
+                    imwrite(Ileft,leftI,'jpg');
+                    
+                    rightI=sprintf('../siftTracked/%d_right.jpg',model);
+                    Irite=showPoints(I2,'red',x2,y2,2,trackPoint,[],rightpoint);
+                    imwrite(Irite,rightI,'jpg');
                 end
                 
             end
@@ -161,16 +175,28 @@ for model=1001:1000+numModel
                 
                 if d<=25.0
                     MOTEST=MOTEST+1;
+                    
+                    leftI=sprintf('../motestTracked/%d_left.jpg',model);
+                    Ileft=showPoints(I1,'red',x1,y1,2,[],[],[]);
+                    imwrite(Ileft,leftI,'jpg');
+                    
+                    rightI=sprintf('../motestTracked/%d_right.jpg',model);
+                    Irite=showPoints(I2,'red',x2,y2,2,[],trackPoint,[] );
+                    imwrite(Irite,rightI,'jpg');
+                    
+                    
                 end
                 
             end
+            
             leftI=sprintf('../frame/%d/left.jpg',model);
             rightI=sprintf('../frame/%d/right.jpg',model);
-            I1=showPoints(I1,'red',x1,y1,2,[],[]);
-            I2=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint );
             
-            imwrite(I1,leftI,'jpg');
-            imwrite(I2,rightI,'jpg');
+            Ileft=showPoints(I1,'red',x1,y1,2,[],[],leftpoint);
+            Irite=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint,rightpoint );
+            
+            imwrite(Ileft,leftI,'jpg');
+            imwrite(Irite,rightI,'jpg');
           
 %             plotPoints(I1,[],[],[x1 y1],[],[], model, leftI); 
 %             plotPoints(I2,[],[],[x2 y2],sift_track_point,trackPoint, model, rightI); 

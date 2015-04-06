@@ -3,7 +3,9 @@
 dir=$1
 stopPoint=$2
 modeldir="model"
+modeldir2="ocmodel"
 texdir="texture"
+texdir2="octexture"
 for i in $(ls $modeldir|grep '\.obj$');do
     
         dir=$((dir+1))
@@ -24,20 +26,20 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
         modelname="./$modeldir/$i"
 
-		while true
-		do
-			model2=$(ls $modeldir|grep '\.obj$' | shuf -n 1)
-			if [ "$i" != "$model2" ]
-			then
-				break
-			fi
-		done
-		modelname2="./$modeldir/$model2"
+		#while true
+		#do
+			model2=$(ls $modeldir2|grep '\.obj$' | shuf -n 1)
+			#if [ "$i" != "$model2" ]
+			#then
+			#	break
+			#fi
+		#done
+		modelname2="./$modeldir2/$model2"
 
 		teximg=$(ls $texdir|grep '\.bmp$' | shuf -n 1)
         texfilename="./texture/$teximg"
-		teximg2=$(ls $texdir|grep '\.bmp$' | shuf -n 1)
-        texfilename2="./texture/$teximg2"
+		teximg2=$(ls $texdir2|grep '\.bmp$' | shuf -n 1)
+        texfilename2="./octexture/$teximg2"
 		while true;do
             ./a.out $modelname $modelname2 $dir2 "sx" $texfilename $texfilename2
             mogrify -flip -format jpg $dir2/*.ppm

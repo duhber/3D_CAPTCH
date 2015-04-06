@@ -93,7 +93,7 @@ void selectChallengePoint();
 unsigned int occluder();
 /* ************** global variables ********************** */
 
-unsigned int model1,model2,bgid,tex1,tex2,occBody;// object to render
+unsigned int model1,model2,bgid,tex1,occBody;// object to render
 static GLfloat spin=0.0;
 
 char *filename1, *filename2, *texfile, *texfile2;
@@ -106,7 +106,8 @@ char *mode;
 char unpFileName[26];
 
 objloader obj,obj2;
-backgroundTexture bg1,bg2;
+backgroundTexture bg1,occ;
+
 
 
 
@@ -162,7 +163,7 @@ int main(int argc, char **argv){
     filename2=argv[2];
     modelno=argv[3];
     mode=argv[4];
-    cout<<argv[5]<<endl;
+    cout<<filename1<<" "<<filename2<<" "<<modelno<<" "<<mode<<" "<<argv[5]<<endl;
     texfile=argv[5];
     texfile2=argv[6];
     obj.includeTexture=true;
@@ -254,11 +255,15 @@ void display(){
 
     		glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
 
-    		glScalef(s2,s2,s2);
+    		//glScalef(s2,s2,s2);
 
-    		glTranslatef(-obj2.center_of_body->x,-obj2.center_of_body->y,-obj2.center_of_body->z);
+    		//glTranslatef(-obj2.center_of_body->x,-obj2.center_of_body->y,-obj2.center_of_body->z);
 
-    		glCallList(model2);
+    		//glCallList(model2);
+
+    		glScalef(1.0,1.0,1.0);
+    		glCallList(occBody);
+
     	glPopMatrix();
    }
 
@@ -269,11 +274,6 @@ void display(){
     	glCallList(model1);
     glPopMatrix();
 
-	glPushMatrix();
-		glScalef(0.125,50.0,0.125);
-
-		glCallList(occBody);
-	glPopMatrix();
 
     /*if(mode[0]=='d'){
     	//cout<<"true"<<endl;
@@ -412,8 +412,8 @@ void init(){
     bg1.loadTexture(texfile);
     tex1=bg1.drawBG();
 
-    bg2.loadTexture(texfile2);
-    tex2=bg2.drawBG();
+    occ.loadTexture(texfile2);
+    occBody=occ.drawTexCube();
 
     //scale down if it is too big
 
@@ -433,7 +433,7 @@ void init(){
 
     // scale object2
 
-    s2=4.0/obj2.dimension[0];
+    s2=6.0/obj2.dimension[0];
     /*obj2.dimension[0]=s2*obj2.dimension[0];
     obj2.dimension[1]=s2*obj2.dimension[1];
     obj2.dimension[2]=s2*obj2.dimension[2];
@@ -446,15 +446,13 @@ void init(){
     R=(obj.radiusBV)*s*(0.75);
     if(!isUnProject){
     	srand(time(NULL));
-    	keyobj.phi=rand()%135;
+    	keyobj.phi=rand()%90;
     	keyobj.theta=rand()%360;
     	setCamera();
     }
     theta_init=keyobj.theta;
     phi_init=keyobj.phi;
     //setObj2Pos('w');
-
-    occBody=occluder();
 }
 
 void reshape(int w, int h){
@@ -752,13 +750,13 @@ void genViewPoints(){
 	if(!sign)
 		sign=-1;
 	int	sign2=rand()%2;
-	if(!sign2)
+	//if(!sign2)
 		sign2=-1;
 
 	float del1,del2, delR;
 
 	del1=rand()%maxAngle+20.0;
-	del2=rand()%maxAngle+20.0;
+	del2=rand()%maxAngle+10.0;
 
 	keyobj.theta=theta_init;
 	keyobj.phi=phi_init;
@@ -810,7 +808,7 @@ void genLightSource(int numOfLight){
 	for(int i=0;i<numOfLight;i++){
 
 		theta=rand()%360;
-		phi=rand()%360;
+		phi=rand()%90;
 
 		lightpos[0]=r*sin(float(theta)*pi/180.0)*sin(float(phi)*pi/180.0);
 		lightpos[1]=r*cos(float(phi)*pi/180.0);
