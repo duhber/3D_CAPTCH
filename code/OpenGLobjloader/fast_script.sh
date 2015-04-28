@@ -3,45 +3,23 @@
 dir=$1
 stopPoint=$2
 modeldir="testmodel"
-modeldir2="ocmodel"
-texdir="texture"
-texdir2="octexture"
 for i in $(ls $modeldir|grep '\.obj$');do
     
         dir=$((dir+1))
-
-        if [ $dir -le $stopPoint ]
-        then
-            continue
-        fi
-
 
         while  [ -d "../frame/$dir" ]
         do
             dir=$((dir+1))
         done
+        
         dir2="../frame/$dir"
 
         mkdir $dir2
 
         modelname="./$modeldir/$i"
 
-		#while true
-		#do
-			model2=$(ls $modeldir2|grep '\.obj$' | shuf -n 1)
-			#if [ "$i" != "$model2" ]
-			#then
-			#	break
-			#fi
-		#done
-		modelname2="./$modeldir2/$model2"
-
-		teximg=$(ls $texdir|grep '\.bmp$' | shuf -n 1)
-        texfilename="./texture/$teximg"
-		teximg2=$(ls $texdir2|grep '\.bmp$' | shuf -n 1)
-        texfilename2="./octexture/$teximg2"
 		while true;do
-            ./a.out $modelname $modelname2 $dir2 "sx" $texfilename $texfilename2
+            ./a.out $modelname $dir2 "sx"
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
@@ -50,6 +28,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
             fi
 
         done
+        
         img="$dir2/frame_0000.jpg"
         keypoint="$dir2/temp"
 
@@ -120,7 +99,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
         fi
 
-        echo "$height"x
+        #echo "$height"x
 
         convert $img -crop "$height"x"$width"+"$startx"+"$starty" $bgtex
         mogrify -format bmp $bgtex
@@ -132,8 +111,9 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
 
 
+        bgtex="$dir2/bgtexture.bmp"
         while true;do
-            ./a.out $modelname $modelname2 $dir2 "st" $texfilename $texfilename2 $frame0
+            ./a.out $modelname $dir2 "st" $bgtex $frame0
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
