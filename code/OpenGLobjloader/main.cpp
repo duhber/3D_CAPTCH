@@ -58,7 +58,6 @@
 void init();
 void display();
 void reshape(int w, int h);
-void rotate();
 
 void processSpecialKeys(int, int , int);
 void processMouse(int, int , int ,int);
@@ -66,9 +65,6 @@ void processNormalKeys(unsigned char key, int x, int y);
 
 void unProject();
 void Project();
-
-void unProject(const vector<projectedKey*> &point2D,vector<unprojectedKey*> &point3D );
-void Project(const vector<unprojectedKey*> &point3D, vector<projectedKey*> &point2D );
 
 void capture_frame(unsigned int);
 
@@ -80,23 +76,14 @@ bool isObjectPoint(double x, double y, double z);
 
 void genLightSource(int numOfLight);
 void genViewPoints();
-void reDraw();
-
-void setObj2Pos(unsigned char c);
 
 void idle();
 
-void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2, float px1, float py1, float px2, float py2);
-
-void selectChallengePoint();
-
-unsigned int occluder();
 /* ************** global variables ********************** */
 
-unsigned int model1,model2,bgid,tex1,occBody;// object to render
-static GLfloat spin=0.0;
+unsigned int model1,tex1;// object to render
 
-char *filename1, *filename2, *texfile, *texfile2;
+char *filename, *texfile;
 char *dirname;
 char *pname;
 
@@ -105,15 +92,10 @@ char *mode;
 
 char unpFileName[26];
 
-objloader obj,obj2;
-backgroundTexture bg1,occ;
+objloader obj;
+backgroundTexture bg1;
 
-
-
-
-bool deletemodel=0;
-
-float s,s2;// scaling parameter
+float s;// scaling parameter
 
 unsigned char axis;// 1-> x-axis  2->z-axis
 
@@ -145,37 +127,30 @@ float theta_init;
 float phi_init;
 int pointIndex;
 
-vector<vector<projectedKey*> >sample2Dpoints;
-vector<vector<unprojectedKey*> >sample3Dpoints;
-vector<projectedKey>pointI1;
-void genSamplingPoints();
-void genDistortion();
 /** ******************************************************************************* **/
 
 
 int main(int argc, char **argv){
-	if(argc <7){
-		cout<<"usage: <filename1> <filename2> <imgno><mode><texfile1><texfile2>(optional)<projectedfiles> \n";
+	if(argc <4){
+		cout<<"usage: <filename><imgno><mode>(optional)<texfile><projectedfiles> \n";
 		return 1;
 	}
 
-    filename1=argv[1];
-    filename2=argv[2];
-    modelno=argv[3];
-    mode=argv[4];
-    cout<<filename1<<" "<<filename2<<" "<<modelno<<" "<<mode<<" "<<argv[5]<<endl;
-    texfile=argv[5];
-    texfile2=argv[6];
+    filename=argv[1];
+    modelno=argv[2];
+    mode=argv[3];
+    cout<<filename<<" "<<modelno<<" "<<mode<<endl;
     obj.includeTexture=true;
-    obj2.includeTexture=true;
-    if(argc==8){
-        pname=argv[7];
+    if(argc==6){
+    	texfile=argv[4];
+        bg1.loadTexture(texfile);
+        tex1=bg1.drawBG();
+        pname=argv[5];
         int l;
         l=strlen(pname);
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
         	isUnProject=true;
-        	//isProject=true;
         	isCapture=false;
 
         }
@@ -207,11 +182,6 @@ int main(int argc, char **argv){
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
                   GLUT_ACTION_GLUTMAINLOOP_RETURNS);
     glutMainLoop();
-
-    if(deletemodel)
-    	return -1;
-    else
-    	return 0;
 
 }
 
@@ -246,26 +216,9 @@ void display(){
     	glPushMatrix();
     		glScalef(R*3,R*3,R*3);
     		//glTranslatef(-0.5,-0.5,-1.0);
-        	glCallList(bgid);
+        	glCallList(tex1);
         glPopMatrix();
     }
-
-    if(framenum==3 && false){
-    	glPushMatrix();
-
-    		glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
-
-    		//glScalef(s2,s2,s2);
-
-    		//glTranslatef(-obj2.center_of_body->x,-obj2.center_of_body->y,-obj2.center_of_body->z);
-
-    		//glCallList(model2);
-
-    		glScalef(1.0,1.0,1.0);
-    		glCallList(occBody);
-
-    	glPopMatrix();
-   }
 
     glPushMatrix();
     	glScalef(s,s,s);
@@ -274,20 +227,8 @@ void display(){
     	glCallList(model1);
     glPopMatrix();
 
-
-    /*if(mode[0]=='d'){
-    	//cout<<"true"<<endl;
-    	glPushMatrix();
-    		glScalef(s2,s2,s2);
-    		glTranslatef(position[0],position[1],position[2]);
-
-    		glCallList(model2);
-    	glPopMatrix();
-
-    }*/
-
     if(isUnProject){
-    	//genSamplingPoints();
+
     	unProject();
 
     	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
@@ -312,10 +253,6 @@ void display(){
 			capture_frame(framenum);
 			char mystr[256];
 			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
-			if(framenum==2){
-				selectChallengePoint();
-				//genDistortion();
-			}
 			keyobj.writeKeypoints(mystr);
 			//reDraw();
 
@@ -330,7 +267,7 @@ void display(){
 
     if(framenum==4){
 
-    	cout<<filename1<<endl;
+    	cout<<filename<<endl;
     	glutLeaveMainLoop();
 
     }
@@ -403,47 +340,16 @@ void init(){
     glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 
-    obj.loadObj(filename1);
+    obj.loadObj(filename);
     model1=obj.drawModel();
 
-    obj2.loadObj(filename2);
-    model2=obj2.drawModel();
 
-    bg1.loadTexture(texfile);
-    tex1=bg1.drawBG();
-
-    occ.loadTexture(texfile2);
-    occBody=occ.drawTexCube();
 
     //scale down if it is too big
-
-
     s=30.0/obj.dimension[0];
-    /*obj.dimension[0]=s*obj.dimension[0];
-    obj.dimension[1]=s*obj.dimension[1];
-    obj.dimension[2]=s*obj.dimension[2];
-    */
-    //cout<<obj.dimension[0]<<" "<< obj.dimension[1]<<" "<<obj.dimension[2]<<endl;
-    //float max_len1,max_len2;
 
-    //max_len1=*max_element(obj.dimension,obj.dimension+3);
-
-
-
-
-    // scale object2
-
-    s2=6.0/obj2.dimension[0];
-    /*obj2.dimension[0]=s2*obj2.dimension[0];
-    obj2.dimension[1]=s2*obj2.dimension[1];
-    obj2.dimension[2]=s2*obj2.dimension[2];
-	*/
-   //cout<<obj2.dimension[0]<<" "<< obj2.dimension[1]<<" "<<obj2.dimension[2]<<endl;
-
-    //max_len2=*max_element(obj2.dimension,obj2.dimension+3);
-
-    //R=max(max_len1*s,max_len2*s2)/2;
     R=(obj.radiusBV)*s*(0.75);
+
     if(!isUnProject){
     	srand(time(NULL));
     	keyobj.phi=rand()%90;
@@ -452,7 +358,6 @@ void init(){
     }
     theta_init=keyobj.theta;
     phi_init=keyobj.phi;
-    //setObj2Pos('w');
 }
 
 void reshape(int w, int h){
@@ -466,14 +371,6 @@ void reshape(int w, int h){
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-}
-
-void rotate(void){
-    spin=spin+0.2;
-    if(spin>360.0)
-        spin=spin-360.0;
-    glutPostRedisplay();
-
 }
 
 void processSpecialKeys(int key, int xx, int yy) {
@@ -551,29 +448,8 @@ void processNormalKeys(unsigned char key, int x, int y){
 			genViewPoints();
 		break;
 
-		case 'x':
-			deletemodel=1;
-			glutLeaveMainLoop();
-		break;
-
 		case 'i':
 			idle();
-		break;
-
-		case 'w':
-			setObj2Pos('w');
-		break;
-
-		case 'a':
-			setObj2Pos('a');
-		break;
-
-		case 's':
-			setObj2Pos('s');
-		break;
-
-		case 'd':
-			setObj2Pos('d');
 		break;
 
 		case 'z':
@@ -660,54 +536,6 @@ void Project(){
 	cout<<modelno<<" "<<visibility<<endl;
 }
 
-void unProject(const vector<projectedKey*> &point2D,vector<unprojectedKey*> &point3D ){
-
-	GLint viewport[4];
-	GLdouble modelview[16];
-	GLdouble projection[16];
-	GLfloat winX, winY, winZ;
-	float x,y;
-
-	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
-	glGetDoublev( GL_PROJECTION_MATRIX, projection );
-	glGetIntegerv( GL_VIEWPORT, viewport );
-
-	for(int i=0;i<point2D.size();i++){
-		x=point2D[i]->x;
-		y=point2D[i]->y;
-
-		winX = (float)x;
-		winY = (float)viewport[3] - (float)y;
-		glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
-
-		gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
-
-		point3D.push_back(new unprojectedKey(posX,posY,posZ));
-	}
-
-}
-void Project(const vector<unprojectedKey*> &point3D, vector<projectedKey*> &point2D ){
-
-	GLint viewport[4];
-	GLdouble modelview[16];
-	GLdouble projection[16];
-	GLdouble winX, winY, winZ;
-
-	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
-	glGetDoublev( GL_PROJECTION_MATRIX, projection );
-	glGetIntegerv( GL_VIEWPORT, viewport );
-
-	for(int i=0;i<point3D.size();i++){
-		posX=point3D[i]->x;
-		posY=point3D[i]->y;
-		posZ=point3D[i]->z;
-
-		gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
-		winY = (double)viewport[3] - winY;
-		point2D.push_back(new projectedKey(winX,winY));
-	}
-
-}
 void capture_frame(unsigned int framenum){
 
   //global pointer float *pRGB
@@ -787,10 +615,7 @@ bool isObjectPoint(double x, double y, double z){
 
 void idle(){
 	isProject=true;
-
-		bgid=tex1;
 	if(framenum==2){
-		//bgid=tex2;
 		genViewPoints();
 	}
 	setCamera();
@@ -823,170 +648,4 @@ void genLightSource(int numOfLight){
 
 }
 
-
-void setObj2Pos(unsigned char pos){
-	d12=max(obj.dimension[0],obj2.dimension[0]);
-	position[0]=-obj2.center_of_body->x;
-	position[1]=-obj2.center_of_body->y;
-	position[2]=-obj2.center_of_body->z;
-
-}
-
-void reDraw(){
-		obj.includeTexture=true;
-		obj.loadObj(filename1);
-		model1=obj.drawModel();
-}
-
-void genSamplingPoints(){
-
-
-
-	float x,y,px,py;
-	vector<unprojectedKey*>point3D;
-	vector<projectedKey*>point2D;
-	for(int i=0;i<keyobj.keypoints.size();i++){
-
-
-		px=keyobj.keypoints[i]->x;
-		py=keyobj.keypoints[i]->y;
-
-		pointI1.push_back(*keyobj.keypoints[i]);
-
-		for(float r=20.0;r<=200.0;r+=20.0){
-			for(float angle=0.0;angle<360.0;angle+=20.0){
-				x=px+r*cos(angle*pi/180.0);
-				y=py+r*sin(angle*pi/180.0);
-				if(isVisible(x,y))
-					point2D.push_back(new projectedKey(x,y));
-
-			}
-		}
-		unProject(point2D, point3D);
-		//cout<<point2D.size()<<" "<<point3D.size()<<endl;
-		sample2Dpoints.push_back(point2D);
-		sample3Dpoints.push_back(point3D);
-
-		point3D.clear();
-		point2D.clear();
-
-	}
-}
-
-void genDistortion(){
-	char cpname[256];
-	sprintf(cpname,"%s/candidatePoints.cp",modelno);
-	ofstream out(cpname);
-	float d1,d2,d,  px1,py1,px2,py2,qx1,qx2,qy1,qy2;
-
-	double sumDistortion;
-	vector<projectedKey*>point2D;
-
-	bool test=true;
-
-	for(int i=0;i<pointI1.size();i++){
-
-
-		px1=pointI1[i].x;
-		py1=pointI1[i].y;
-
-		px2=keyobj.keypoints[i]->x;
-		py2=keyobj.keypoints[i]->y;
-		//cout<<px2<<" "<<py2<<endl;
-		if(!isVisible(px2,py2))
-			continue;
-
-		Project(sample3Dpoints[i], point2D);
-		sumDistortion=0.0;
-
-
-		if(test){
-			test=false;
-			//testPoints(sample2Dpoints[i], point2D, px1, py1, px2, py2);
-		}
-		for(int j=0;j<point2D.size();j++){
-
-			qx1=sample2Dpoints[i][j]->x;
-			qy1=sample2Dpoints[i][j]->y;
-
-			qx2=point2D[j]->x;
-			qy2=point2D[j]->y;
-
-			d1=sqrt(pow(px1-qx1,2)+pow(py1-qy1,2));
-			d2=sqrt(pow(px2-qx2,2)+pow(py2-qy2,2));
-
-			d=abs(d1-d2);
-			sumDistortion+=double(d);
-			//cout<<d<<endl;
-		}
-		for(int j=0;j<point2D.size();j++){
-			delete point2D[j];
-		}
-		point2D.clear();
-
-		out<<px1<<" "<<py1<<" "<<px2<<" "<<py2<<" "<<sumDistortion<<endl;
-	}
-	out.close();
-
-	for(int i=0;i<sample2Dpoints.size();i++){
-		for(int j=0;j<sample2Dpoints[i].size();j++){
-			delete sample2Dpoints[i][j];
-			delete sample3Dpoints[i][j];
-		}
-	}
-	sample2Dpoints.clear();
-	sample3Dpoints.clear();
-}
-
-
-void testPoints(const vector<projectedKey*>&p1, const vector<projectedKey*>&p2,float px1, float py1, float px2, float py2){
-	char f1[256], f2[256];
-	sprintf(f1,"%s/p1",modelno);
-	sprintf(f2,"%s/p2",modelno);
-	ofstream o1(f1),o2(f2);
-	o1<<px1<<" "<<py1<<endl;
-	o2<<px2<<" "<<py2<<endl;
-	for(int i=0;i<p1.size();i++){
-		o1<<p1[i]->x<<" "<<p1[i]->y<<endl;
-		o2<<p2[i]->x<<" "<<p2[i]->y<<endl;
-	}
-	o1.close();
-	o2.close();
-}
-
-
-unsigned int occluder(){
-	unsigned int k;
-	k=glGenLists(1);
-	//GLfloat mat_spc[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat mat_amb[] = { 0.1, 0.0, 0.0, 0.5 };
-	GLfloat mat_dif[] = { 0.7, 0.0, 0.0, 1.0 };
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
-	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
-	glNewList(k,GL_COMPILE);
-	glutSolidCube(1.50);
-	glEndList();
-	return k;
-}
-
-
-void selectChallengePoint(){
-	int totalPoint;
-	totalPoint=keyobj.keypoints.size();
-	cout<<totalPoint<<endl;
-	srand(time(NULL));
-	while(1){
-		pointIndex=rand()%totalPoint;
-		cout<<keyobj.keypoints[pointIndex]->x<<" "<<keyobj.keypoints[pointIndex]->y<<endl;
-		if (isVisible(keyobj.keypoints[pointIndex]->x, keyobj.keypoints[pointIndex]->y))
-			break;
-	}
-	cout<<pointIndex<<endl;
-	char cpointname[256];
-	sprintf(cpointname,"%s/challengepoint",modelno);
-	ofstream o(cpointname);
-	o<<pointIndex<<endl;
-	o.close();
-}
 
