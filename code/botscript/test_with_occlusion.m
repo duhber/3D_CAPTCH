@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=598;
+    numModel=460;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -47,7 +47,7 @@ for model=1001:1000+numModel
             continue;
         end
         
-        for frame2=3:3%frame1+1:1
+        for frame2=3:3
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -91,40 +91,54 @@ for model=1001:1000+numModel
             
             frameKeyPoints1=file1.data;
             frameKeyPoints2=file2.data;
+            %% candidate points
+            cpfilename=sprintf('../frame/%d/challengepoint',model);
+            
+            cp=importdata(cpfilename)+1;            
+            
+            x1=round(frameKeyPoints1(cp,1));
+            y1=round(frameKeyPoints1(cp,2));
+            
+            x2=round(frameKeyPoints2(cp,1));
+            y2=round(frameKeyPoints2(cp,2));
+%             x2=x1;
+%             y2=y1;
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            texfile='../OpenGLobjloader/octexture/eagle3.jpeg';
+            teximage=imread(texfile);
+            
+%             I2=obfuscation(x1,y1,I1,I2);
+%             
+            I2=occlude(x2,y2,I2,teximage);
             
             
             %%%%%% compute the sift descriptor of the two frame %%%%%%%%%%%
             [image1, des1, locs1]=sift(I1);
             [image2, des2, locs2]=sift(I2);
             
-            if size(des1,1)<10
+            if size(des1,1)<60
                 continue;
             end
             
-            if size(des2,1)<10
+            if size(des2,1)<60
                 continue;
             end            
             
-                                     
+%             per=analyseSiftPoints(x2,y2,25,locs2);     
+  
             %find the best challenge points                      
             
             [Motion_est, N,inliers]=homography2(des2,locs2,des1,locs1,0.6);
            
             count=count+1;
-            cpfilename=sprintf('../frame/%d/challengepoint',model);
-            
-            cp=importdata(cpfilename)+1;            
-            
-            x1=frameKeyPoints1(cp,1);
-            y1=frameKeyPoints1(cp,2);
-            
-            x2=frameKeyPoints2(cp,1);
-            y2=frameKeyPoints2(cp,2);
+
             
             % using nearest sift
-            
+            leftpoint=[];
+            rightpoint=[];
             trackPoint=nearestSIFTmethod([x1 y1],des1,locs1,des2,locs2);
-            [leftpoint, rightpoint]=nNearestSiftPoints([x1 y1],des1,locs1,des2,locs2,10);
+%             [leftpoint, rightpoint]=nNearestSiftPoints([x1 y1],des1,locs1,des2,locs2,10);
             
             
            
@@ -189,8 +203,8 @@ for model=1001:1000+numModel
                 
             end
             
-            leftI=sprintf('../frame/%d/left.jpg',model);
-            rightI=sprintf('../frame/%d/right.jpg',model);
+            leftI=sprintf('../image/%d_left.jpg',model);
+            rightI=sprintf('../image/%d_right.jpg',model);
             
             Ileft=showPoints(I1,'red',x1,y1,2,[],[],leftpoint);
             Irite=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint,rightpoint );

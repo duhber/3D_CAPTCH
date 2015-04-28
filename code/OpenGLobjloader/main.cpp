@@ -250,7 +250,7 @@ void display(){
         glPopMatrix();
     }
 
-    if(framenum==3){
+    if(framenum==3 && false){
     	glPushMatrix();
 
     		glTranslatef((keyobj.objpoints[pointIndex]->x+keyobj.eyex)/2,(keyobj.objpoints[pointIndex]->y+keyobj.eyey)/2, (keyobj.objpoints[pointIndex]->z+keyobj.eyez)/2);
