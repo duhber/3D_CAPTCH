@@ -19,7 +19,7 @@
 #include<cstring>
 #include<ctime>
 #include<map>
-
+#include<cmath>
 #ifndef BACKGROUNDTEXTURE_H_
 #define BACKGROUNDTEXTURE_H_
 
@@ -31,7 +31,7 @@ class backgroundTexture{
 		unsigned int dpid;
 	public:
 		void loadTexture(const char *imgname);
-		unsigned int drawBG();
+		unsigned int drawBG(float);
 		unsigned int drawTexCube();
 		~backgroundTexture();
 };
