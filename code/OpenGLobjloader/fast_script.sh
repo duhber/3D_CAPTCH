@@ -2,7 +2,7 @@
 
 dir=$1
 stopPoint=$2
-modeldir="testmodel"
+modeldir="model"
 for i in $(ls $modeldir|grep '\.obj$');do
     
         dir=$((dir+1))
@@ -19,7 +19,7 @@ for i in $(ls $modeldir|grep '\.obj$');do
         modelname="./$modeldir/$i"
 
 		while true;do
-            ./a.out $modelname $dir2 "sx"
+            ./a.out $modelname $dir2 "1"
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
@@ -51,11 +51,14 @@ for i in $(ls $modeldir|grep '\.obj$');do
 
 
         cat $keypoint >> $frame0
-        
-        RANGE=$numkeys
 
-        number=$RANDOM
-        let "number %= $RANGE"
+        #unproject all the FAST points : 2D to 3D
+
+        ./a.out $modelname $dir2 "2" $frame0
+        
+        selPointFile="$dir2/challengepoint"
+
+        number=$(sed -n "1"p $selPointFile)
 
         #echo "$number"
 
@@ -110,10 +113,11 @@ for i in $(ls $modeldir|grep '\.obj$');do
         fi
 
 
-
+        unpfile="$dir2/frame_0000.u"
         bgtex="$dir2/bgtexture.bmp"
+        #bgtex1="./texture/tex13.bmp"
         while true;do
-            ./a.out $modelname $dir2 "st" $bgtex $frame0
+            ./a.out $modelname $dir2 "3" $unpfile $bgtex $number
             mogrify -flip -format jpg $dir2/*.ppm
             if [ $? -eq 0 ]
             then
