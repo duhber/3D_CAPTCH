@@ -91,7 +91,7 @@ for model=1001:1000+numModel
             
             frameKeyPoints1=file1.data;
             frameKeyPoints2=file2.data;
-            %% candidate points
+%             candidate points
             cpfilename=sprintf('../frame/%d/challengepoint',model);
             
             cp=importdata(cpfilename)+1;            

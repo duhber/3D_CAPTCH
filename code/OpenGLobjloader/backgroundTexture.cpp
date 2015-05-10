@@ -81,7 +81,6 @@ unsigned int backgroundTexture::drawBG(float r){
 	num=glGenLists(1);
 	float z;
 	z=5;
-	cout<<z<<" "<<r<<endl;
 	glNewList(num,GL_COMPILE);
     	glEnable(GL_TEXTURE_2D);
     	glBindTexture(GL_TEXTURE_2D,texid);

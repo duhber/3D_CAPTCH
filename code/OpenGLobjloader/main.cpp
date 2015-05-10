@@ -64,13 +64,14 @@ void processMouse(int, int , int ,int);
 void processNormalKeys(unsigned char key, int x, int y);
 
 void unProject();
+void unProject(float x, float y);
 void Project();
+void Project(GLdouble x, GLdouble y, GLdouble z);
 
 void capture_frame(unsigned int);
 
 void setCamera();
 
-bool isVisible(double x, double y);
 bool isObjectPoint(double x, double y, double z);
 
 
@@ -79,13 +80,15 @@ void genViewPoints();
 
 void idle();
 
+void selectChallengePoint();
+
 /* ************** global variables ********************** */
 
 unsigned int model1,tex1;// object to render
 
 char *filename, *texfile;
 char *dirname;
-char *pname;
+char *pname, *unpname;
 
 char *modelno;
 char *mode;
@@ -115,6 +118,8 @@ bool isUnProject=false;
 bool isCapture=true;
 bool isProject=false;
 
+bool cpVisible=false;
+
 float visibility;
 
 float position[3];// position for model2
@@ -141,22 +146,28 @@ int main(int argc, char **argv){
     mode=argv[3];
     cout<<filename<<" "<<modelno<<" "<<mode<<endl;
     obj.includeTexture=true;
-    if(argc==6){
-    	texfile=argv[4];
-        bg1.loadTexture(texfile);
-        tex1=bg1.drawBG();
-        pname=argv[5];
+    if(mode[0]=='2'){
+
+        pname=argv[4];
         int l;
         l=strlen(pname);
         if(pname[l-1]=='p'){
         	keyobj.readKeypoints(pname);
-        	isUnProject=true;
-        	isCapture=false;
+        	//isUnProject=true;
+        	//isCapture=false;
 
         }
 
         else
         	exit(0);
+    }
+    if(mode[0]=='3'){
+    	texfile=argv[5];
+    	unpname=argv[4];
+    	keyobj.readObjpoints(unpname);
+    	pointIndex=atoi(argv[6]);
+    	cout<<"point Index:---->  "<<pointIndex<<endl;
+    	framenum=1;
     }
     /**********************************************/
     /* Initialize glut */
@@ -212,10 +223,8 @@ void display(){
     /* *******************render scene here ***************************/
 
 
-    if(mode[1]=='t' && (framenum==1 || framenum==3)){
+    if(mode[0]=='3' && (framenum==2)){
     	glPushMatrix();
-    		glScalef(R*3,R*3,R*3);
-    		//glTranslatef(-0.5,-0.5,-1.0);
         	glCallList(tex1);
         glPopMatrix();
     }
@@ -227,17 +236,18 @@ void display(){
     	glCallList(model1);
     glPopMatrix();
 
-    if(isUnProject){
+    if(mode[0]=='2'){
 
     	unProject();
 
     	sprintf(unpFileName,"%s/frame_%04d.u",modelno,framenum);
     	keyobj.writeObjpoints(unpFileName);
-    	framenum++;
-    	isUnProject=false;
+    	selectChallengePoint();
+		glutLeaveMainLoop();
+    	//isUnProject=false;
     }
 
-    if(isCapture){
+    if(mode[0]=='1'){
 		capture_frame(framenum);
 		char mystr[256];
 		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
@@ -246,10 +256,10 @@ void display(){
 
     }
 
-    if(isProject){
+    if(mode[0]=='3'){
 		Project();
 
-		if(visibility>50.0){
+		if( cpVisible){
 			capture_frame(framenum);
 			char mystr[256];
 			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
@@ -265,7 +275,7 @@ void display(){
 		}
     }
 
-    if(framenum==4){
+    if(framenum==3){
 
     	cout<<filename<<endl;
     	glutLeaveMainLoop();
@@ -283,9 +293,9 @@ void init(){
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-    //glEnable(GL_LIGHT1);
-    /*glEnable(GL_LIGHT2);
-    glEnable(GL_LIGHT3);
+    glEnable(GL_LIGHT1);
+    glEnable(GL_LIGHT2);
+    /*glEnable(GL_LIGHT3);
     glEnable(GL_LIGHT4);
     glEnable(GL_LIGHT5);
     glEnable(GL_LIGHT6);*/
@@ -299,10 +309,10 @@ void init(){
     glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT1,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
+    glLightfv(GL_LIGHT1,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT2,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
+    glLightfv(GL_LIGHT2,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT3,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT3,GL_AMBIENT,col0);
@@ -319,10 +329,10 @@ void init(){
     GLfloat pos0[]={50.0,50.0,50.0,0.0};
     glLightfv(GL_LIGHT0,GL_POSITION,pos0);
 
-    GLfloat pos1[]={100.0,0.0,0.0,1.0};
+    GLfloat pos1[]={150.0,0.0,0.0,1.0};
     glLightfv(GL_LIGHT1,GL_POSITION,pos1);
 
-    GLfloat pos2[]={0.0,100.0,0.0,1.0};
+    GLfloat pos2[]={0.0,150.0,0.0,1.0};
     glLightfv(GL_LIGHT2,GL_POSITION,pos2);
 
     GLfloat pos3[]={100.0,0.0,100.0,1.0};
@@ -343,21 +353,31 @@ void init(){
     obj.loadObj(filename);
     model1=obj.drawModel();
 
-
-
     //scale down if it is too big
     s=30.0/obj.dimension[0];
 
-    R=(obj.radiusBV)*s*(0.75);
+    R=(obj.radiusBV)*s;
 
-    if(!isUnProject){
+
+
+    if(mode[0]=='1'){
     	srand(time(NULL));
-    	keyobj.phi=rand()%90;
+    	keyobj.phi=100-rand()%45;
     	keyobj.theta=rand()%360;
     	setCamera();
     }
     theta_init=keyobj.theta;
     phi_init=keyobj.phi;
+    if(mode[0]=='3'){
+        bg1.loadTexture(texfile);
+        tex1=bg1.drawBG(R*3);
+
+    	genViewPoints();
+
+    	setCamera();
+    	//genLightSource(3);
+    }
+
 }
 
 void reshape(int w, int h){
@@ -425,12 +445,17 @@ void processNormalKeys(unsigned char key, int x, int y){
 
 	switch(key){
 		case 'p':
-			Project();
+			Project(posX,posY,posZ);
+			/*Project();
 			capture_frame(framenum);
 
 			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
 			keyobj.writeKeypoints(mystr);
-			framenum++;
+			framenum++;*/
+		break;
+
+		case 'u':
+			unProject(mx,my);
 		break;
 
 		case 'c':
@@ -499,41 +524,76 @@ void Project(){
 	GLdouble projection[16];
 	GLdouble winX, winY, winZ;
 
+	GLfloat zdepth=0.0;
+	GLdouble epsilon=0.003;
 	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
 	glGetDoublev( GL_PROJECTION_MATRIX, projection );
 	glGetIntegerv( GL_VIEWPORT, viewport );
 
-	visibility=0.0;
-	int nOutliers=0;
 	for(int i=0;i<keyobj.objpoints.size();i++){
 		posX=keyobj.objpoints[i]->x;
 		posY=keyobj.objpoints[i]->y;
 		posZ=keyobj.objpoints[i]->z;
 
 		gluProject( posX, posY, posZ, modelview, projection, viewport, &winX, &winY, &winZ);
+		glReadPixels( winX, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &zdepth );
+
 		winY = (double)viewport[3] - winY;
 
-		bool notObjPoint;
-		notObjPoint=!isObjectPoint(posX,posY,posZ);
+		if(fabs(winZ-zdepth)<0.003 and isObjectPoint(posX,posY,posZ)){
 
-		if(isVisible(winX,winY) and  !notObjPoint){
-			visibility+=1.0;
-			keyobj.keypoints.push_back(new projectedKey(winX,winY));
+			if(i==pointIndex)
+				cpVisible=true;
 		}
-		else
-			keyobj.keypoints.push_back(new projectedKey(-1.0,-1.0));
 
-
-		if(notObjPoint)
-			nOutliers++;
-
+		if(i==pointIndex){
+			cout<<fabs(winZ-zdepth)<<endl;
+		}
+		keyobj.keypoints.push_back(new projectedKey(winX,winY));
 
 	}
+	cout<<cpVisible<<endl;
+}
+
+void Project(GLdouble pX, GLdouble pY, GLdouble pZ){
+	GLint viewport[4];
+	GLdouble modelview[16];
+	GLdouble projection[16];
+	GLdouble winX, winY, winZ;
+	GLfloat zdepth=0.0;
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	glGetIntegerv( GL_VIEWPORT, viewport );
+
+	gluProject( pX, pY, pZ, modelview, projection, viewport, &winX, &winY, &winZ);
 
 
+	glReadPixels( winX, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &zdepth );
+	winY = (double)viewport[3] - winY;
+	cout<<winX<<" "<<winY<<" "<<endl;
+	cout<<"winZ = "<<winZ<<" "<<"zdepth = "<<zdepth<<endl;
+	cout<<"diff = "<<fabs(winZ-zdepth)<<endl;
+}
 
-	visibility=(visibility*100.0)/(keyobj.objpoints.size()-nOutliers);
-	cout<<modelno<<" "<<visibility<<endl;
+void unProject(float x, float y){
+	GLint viewport[4];
+	GLdouble modelview[16];
+	GLdouble projection[16];
+	GLfloat winX, winY, winZ;
+
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	glGetIntegerv( GL_VIEWPORT, viewport );
+
+	winX = (float)x;
+	winY = (float)viewport[3] - (float)y;
+
+	glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
+
+	cout<<winZ<<endl;
+	gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+
+	cout<<posX<<" "<<posY<<" "<<posZ<<endl;
 }
 
 void capture_frame(unsigned int framenum){
@@ -578,29 +638,22 @@ void genViewPoints(){
 	if(!sign)
 		sign=-1;
 	int	sign2=rand()%2;
-	//if(!sign2)
+	if(!sign2)
 		sign2=-1;
 
 	float del1,del2, delR;
 
-	del1=rand()%maxAngle+20.0;
-	del2=rand()%maxAngle+10.0;
+	del1=rand()%45+15;
+	del2=rand()%15+10;
 
-	keyobj.theta=theta_init;
-	keyobj.phi=phi_init;
+//	keyobj.theta=theta_init+15;
+	//keyobj.phi=phi_init;
 
 	delR=rand()%7;
 
 	keyobj.theta+=del1*sign;
 	keyobj.phi+=del2*sign2;
-}
-
-bool isVisible(double x, double y){
-
-	if(x>0.0 && x <SCREEN_WIDTH && y>0.0 && y <SCREEN_HEIGHT)
-		return true;
-	else
-		return false;
+	cout<<keyobj.theta<<" "<<keyobj.phi<<endl;
 }
 
 bool isObjectPoint(double x, double y, double z){
@@ -614,26 +667,28 @@ bool isObjectPoint(double x, double y, double z){
 
 
 void idle(){
-	isProject=true;
-	if(framenum==2){
-		genViewPoints();
-	}
-	setCamera();
-	genLightSource(3);
-	glutPostRedisplay();
+
+    if(framenum==1){
+    	genViewPoints();
+    }
+    setCamera();
+    //genLightSource(3);
+    glutPostRedisplay();
 }
 
 void genLightSource(int numOfLight){
 	int theta,phi;
 	float r, temp;
 	temp=max(obj.dimension[0],obj.dimension[2]);
-	r=max(temp,obj.dimension[1])+5.0;
+	//r=max(temp,obj.dimension[1])+5.0;
+	r=R;
 	float lightpos[4];
 	lightpos[3]=1.0;
+	int theta_list[]={90,180,270,360};
 	for(int i=0;i<numOfLight;i++){
 
-		theta=rand()%360;
-		phi=rand()%90;
+		theta=keyobj.theta+theta_list[i];
+		phi=30;
 
 		lightpos[0]=r*sin(float(theta)*pi/180.0)*sin(float(phi)*pi/180.0);
 		lightpos[1]=r*cos(float(phi)*pi/180.0);
@@ -646,6 +701,25 @@ void genLightSource(int numOfLight){
 		glDisable(GL_LIGHT0+i);
 	}
 
+}
+
+void selectChallengePoint(){
+	int totalPoint;
+	totalPoint=keyobj.objpoints.size();
+	//cout<<totalPoint<<endl;
+	srand(time(NULL));
+	while(1){
+		pointIndex=rand()%totalPoint;
+		//cout<<keyobj.objpoints[pointIndex]->x<<" "<<keyobj.objpoints[pointIndex]->y<<" "<<keyobj.objpoints[pointIndex]->z<< endl;
+		if (isObjectPoint(keyobj.objpoints[pointIndex]->x, keyobj.objpoints[pointIndex]->y, keyobj.objpoints[pointIndex]->z))
+			break;
+	}
+	//cout<<pointIndex<<endl;
+	char cpointname[256];
+	sprintf(cpointname,"%s/challengepoint",modelno);
+	ofstream o(cpointname);
+	o<<pointIndex<<endl;
+	o.close();
 }
 
 
