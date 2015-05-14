@@ -65,6 +65,7 @@ void processNormalKeys(unsigned char key, int x, int y);
 
 void unProject();
 void unProject(float x, float y);
+void unProject(float x, float y, double * , double *, double *);
 void Project();
 void Project(GLdouble x, GLdouble y, GLdouble z);
 
@@ -76,15 +77,22 @@ bool isObjectPoint(double x, double y, double z);
 
 
 void genLightSource(int numOfLight);
+void setLight(int i);
+void offLight(int i);
+
 void genViewPoints();
 
 void idle();
 
 void selectChallengePoint();
 
+void writeDepthDiff();
+
+void isObjCloseToCam();
+
 /* ************** global variables ********************** */
 
-unsigned int model1,tex1;// object to render
+unsigned int model1,tex1, bbox;// object to render
 
 char *filename, *texfile;
 char *dirname;
@@ -128,9 +136,13 @@ float  d12=0.0, R;// distance between the model
 
 int maxAngle=31;
 
+bool showBox=false;
+
 float theta_init;
 float phi_init;
 int pointIndex;
+
+double depth_diff;
 
 /** ******************************************************************************* **/
 
@@ -189,7 +201,7 @@ int main(int argc, char **argv){
     glutSpecialFunc(processSpecialKeys);
     glutMouseFunc(processMouse);
     glutKeyboardFunc(processNormalKeys);
-    glutIdleFunc(idle);
+    //glutIdleFunc(idle);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
                   GLUT_ACTION_GLUTMAINLOOP_RETURNS);
     glutMainLoop();
@@ -235,6 +247,13 @@ void display(){
 
     	glCallList(model1);
     glPopMatrix();
+    if(showBox){
+    	glPushMatrix();
+    		glScalef(s,s,s);
+    		glTranslatef(-obj.center_of_body->x,-obj.center_of_body->y,-obj.center_of_body->z);
+    		glCallList(bbox);
+    	glPopMatrix();
+    }
 
     if(mode[0]=='2'){
 
@@ -278,6 +297,7 @@ void display(){
     if(framenum==3){
 
     	cout<<filename<<endl;
+    	writeDepthDiff();
     	glutLeaveMainLoop();
 
     }
@@ -295,38 +315,38 @@ void init(){
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHT1);
     glEnable(GL_LIGHT2);
-    /*glEnable(GL_LIGHT3);
+    glEnable(GL_LIGHT3);
     glEnable(GL_LIGHT4);
     glEnable(GL_LIGHT5);
-    glEnable(GL_LIGHT6);*/
+    glEnable(GL_LIGHT6);
 
     GLfloat col0[]={1.0,1.0,1.0,1.0};
     GLfloat col1[]={0.0,0.0,1.0,1.0};
     GLfloat col2[]={0.0,1.0,0.0,1.0};
     GLfloat col3[]={1.0,0.0,0.0,1.0};
 
-    glLightfv(GL_LIGHT0,GL_DIFFUSE,col0);
+   glLightfv(GL_LIGHT0,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT0,GL_AMBIENT,col0);
 
-    glLightfv(GL_LIGHT1,GL_DIFFUSE,col0);
+    //glLightfv(GL_LIGHT1,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT1,GL_AMBIENT,col0);
 
     glLightfv(GL_LIGHT2,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT2,GL_AMBIENT,col0);
 
-    glLightfv(GL_LIGHT3,GL_DIFFUSE,col0);
+   // glLightfv(GL_LIGHT3,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT3,GL_AMBIENT,col0);
 
-    glLightfv(GL_LIGHT4,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT4,GL_AMBIENT,col1);
+    //glLightfv(GL_LIGHT4,GL_DIFFUSE,col0);
+    glLightfv(GL_LIGHT4,GL_AMBIENT,col0);
 
-    glLightfv(GL_LIGHT5,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT5,GL_AMBIENT,col2);
+    //glLightfv(GL_LIGHT5,GL_DIFFUSE,col0);
+    glLightfv(GL_LIGHT5,GL_AMBIENT,col0);
 
-    glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
-    glLightfv(GL_LIGHT6,GL_AMBIENT,col3);
+    //glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
+    glLightfv(GL_LIGHT6,GL_AMBIENT,col0);
 
-    GLfloat pos0[]={50.0,50.0,50.0,0.0};
+    GLfloat pos0[]={50.0,50.0,50.0,1.0};
     glLightfv(GL_LIGHT0,GL_POSITION,pos0);
 
     GLfloat pos1[]={150.0,0.0,0.0,1.0};
@@ -335,16 +355,16 @@ void init(){
     GLfloat pos2[]={0.0,150.0,0.0,1.0};
     glLightfv(GL_LIGHT2,GL_POSITION,pos2);
 
-    GLfloat pos3[]={100.0,0.0,100.0,1.0};
+    GLfloat pos3[]={0.0,0.0,150.0,1.0};
     glLightfv(GL_LIGHT3,GL_POSITION,pos3);
 
     GLfloat pos4[]={-100.0,0.0,0.0,1.0};
     glLightfv(GL_LIGHT4,GL_POSITION,pos4);
 
-    GLfloat pos5[]={0.0,-100.0,0.0,0.0};
+    GLfloat pos5[]={0.0,0.0,-100.0,1.0};
     glLightfv(GL_LIGHT5,GL_POSITION,pos5);
 
-    GLfloat pos6[]={0.0,0.0,-100.0,0.0};
+    GLfloat pos6[]={0.0,-100.0,0.0,1.0};
     glLightfv(GL_LIGHT6,GL_POSITION,pos6);
 
     glEnable(GL_MULTISAMPLE);
@@ -356,7 +376,9 @@ void init(){
     //scale down if it is too big
     s=30.0/obj.dimension[0];
 
-    R=(obj.radiusBV)*s;
+    R=(obj.radiusBV)*s*0.75;
+
+    bbox=obj.drawBoundingBox();
 
 
 
@@ -365,6 +387,7 @@ void init(){
     	keyobj.phi=100-rand()%45;
     	keyobj.theta=rand()%360;
     	setCamera();
+    	setLight(0);
     }
     theta_init=keyobj.theta;
     phi_init=keyobj.phi;
@@ -375,6 +398,7 @@ void init(){
     	genViewPoints();
 
     	setCamera();
+    	setLight(0);
     	//genLightSource(3);
     }
 
@@ -442,8 +466,32 @@ void processMouse(int button, int state, int x, int y){
 
 void processNormalKeys(unsigned char key, int x, int y){
 	char mystr[256];
-
+	GLboolean status;
 	switch(key){
+
+		case '0':
+
+			glDisable(GL_LIGHT0);
+		break;
+		case '1':
+			offLight(1);
+		break;
+		case '2':
+			offLight(2);
+		break;
+		case '3':
+			offLight(3);
+		break;
+		case '4':
+			offLight(4);
+		break;
+		case '5':
+			offLight(5);
+		break;
+		case '6':
+			offLight(6);
+		break;
+
 		case 'p':
 			Project(posX,posY,posZ);
 			/*Project();
@@ -468,13 +516,27 @@ void processNormalKeys(unsigned char key, int x, int y){
 		case 'q':
 			glutLeaveMainLoop();
 		break;
+		case 's':
+			cout<<"\n"<<keyobj.theta<<" "<<keyobj.phi<<endl;
+		break;
+		case 'r':
+			cout<<R<<endl;
+		break;
 
 		case 'g':
-			genViewPoints();
+			isObjCloseToCam();
 		break;
 
 		case 'i':
 			idle();
+		break;
+
+		case 'b':
+			if(showBox==true){
+				showBox=false;
+			}
+			else
+				showBox=true;
 		break;
 
 		case 'z':
@@ -540,15 +602,14 @@ void Project(){
 
 		winY = (double)viewport[3] - winY;
 
-		if(fabs(winZ-zdepth)<0.003 and isObjectPoint(posX,posY,posZ)){
-
-			if(i==pointIndex)
-				cpVisible=true;
-		}
-
 		if(i==pointIndex){
-			cout<<fabs(winZ-zdepth)<<endl;
+			depth_diff=fabs(winZ-zdepth);
+			if(depth_diff<0.001  and winX>0 and winY>0 )
+				cpVisible=true;
+			else
+				cpVisible=false;
 		}
+
 		keyobj.keypoints.push_back(new projectedKey(winX,winY));
 
 	}
@@ -595,6 +656,27 @@ void unProject(float x, float y){
 
 	cout<<posX<<" "<<posY<<" "<<posZ<<endl;
 }
+void unProject(float x, float y, double * _X , double *_Y, double *_Z){
+	GLint viewport[4];
+	GLdouble modelview[16];
+	GLdouble projection[16];
+	GLfloat winX, winY, winZ;
+
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	glGetIntegerv( GL_VIEWPORT, viewport );
+
+	winX = (float)x;
+	winY = (float)viewport[3] - (float)y;
+
+	glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
+
+	//cout<<winZ<<endl;
+	gluUnProject( winX, winY, winZ, modelview, projection, viewport,_X, _Y, _Z);
+
+	//cout<<posX<<" "<<posY<<" "<<posZ<<endl;
+
+}
 
 void capture_frame(unsigned int framenum){
 
@@ -638,13 +720,13 @@ void genViewPoints(){
 	if(!sign)
 		sign=-1;
 	int	sign2=rand()%2;
-	if(!sign2)
+	//if(!sign2)
 		sign2=-1;
 
 	float del1,del2, delR;
 
-	del1=rand()%45+15;
-	del2=rand()%15+10;
+	del1=rand()%30+30;
+	del2=rand()%5+15;
 
 //	keyobj.theta=theta_init+15;
 	//keyobj.phi=phi_init;
@@ -703,6 +785,26 @@ void genLightSource(int numOfLight){
 
 }
 
+void setLight(int i){
+	int theta,phi;
+	theta=keyobj.theta;
+	phi=keyobj.phi;
+	float lightpos[4];
+	lightpos[3]=1.0;
+	lightpos[0]=R*sin(float(theta)*pi/180.0)*sin(float(phi)*pi/180.0);
+	lightpos[1]=R*cos(float(phi)*pi/180.0);
+	lightpos[2]=R*cos(float(theta)*pi/180.0)*sin(float(phi)*pi/180.0);
+	glEnable(GL_LIGHT0+i);
+	glLightfv(GL_LIGHT0+i,GL_POSITION,lightpos);
+
+}
+
+void offLight(int i){
+	glDisable(GL_LIGHT0+i);
+}
+
+
+
 void selectChallengePoint(){
 	int totalPoint;
 	totalPoint=keyobj.objpoints.size();
@@ -722,4 +824,30 @@ void selectChallengePoint(){
 	o.close();
 }
 
+void writeDepthDiff(){
+	ofstream dfile;
+	dfile.open("../frame/depth_difference.dat",ofstream::out|ofstream::app);
+
+	dfile<<modelno<<" "<<depth_diff<<endl;
+	dfile.close();
+}
+
+void isObjCloseToCam(){
+	double *_X, *_Y,*_Z;
+	int count=0;
+	double dist, total=0.0;
+	for(int xx=1;xx<=600;xx++){
+		for(int yy=1;yy<=400;yy++){
+			unProject(xx,yy,_X,_Y,_Z);
+
+			if(isObjectPoint(*_X, *_Y,*_Z)){
+
+				dist=sqrt(pow(keyobj.eyex-*_X,2)+pow(keyobj.eyey-*_Y,2)+pow(keyobj.eyez-*_Z,2));
+				total+=dist;
+				count++;
+			}
+		}
+	}
+	cout<<total/count<<endl;
+}
 
