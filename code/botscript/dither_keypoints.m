@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=10;
+    numModel=27;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -51,7 +51,7 @@ for model=1001:1000+numModel
             continue;
         end
         
-        for frame2=2:2
+        for frame2=1:1
             
             f2=sprintf(strcat(modelDir,'jpg'),model,frame2);
             
@@ -105,20 +105,94 @@ for model=1001:1000+numModel
             
             x2=round(frameKeyPoints2(cp,1));
             y2=round(frameKeyPoints2(cp,2));
+            
+            if x2>600
+                continue;
+            end
+            if y2>400
+                continue;
+            end
 %             x2=x1;
 %             y2=y1;
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            [image, des, locs]=sift(I2);
+            nkeys=size(locs,1);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     generate an image with patch as background
+            Izeros=(~I2(:,:,1)) & (~I2(:,:,2)) & (~I2(:,:,3)) ;
             
-%             texfile='../OpenGLobjloader/octexture/zebra.jpeg';
-%             teximage=imread(texfile);
+            Imask(:,:,1)=double(Izeros(:,:));
+            Imask(:,:,2)=double(Izeros(:,:));
+            Imask(:,:,3)=double(Izeros(:,:));
+            
+            wind=63;    
+            
+            patchList=zeros(21,21,3,18);
+            
+            patchList(:,:,:,1:9)=getPatch(I1,x1,y1,wind);
+            patchList(:,:,:,10:18)=getPatch(I2,x2,x2,wind);
+%             patch(:,:,:,2)=getPatch(I2,x2,y2,wind);
+
+            Ip=zeros(H,W,3);
+            
+            for i=1:18
+                for j=1:20
+                    qx=randi([11 590]); 
+                    qy=randi([11 390]);
+                    Ip(qy-10:qy+10,qx-10:qx+10,:)=patchList(:,:,:,i);
+                end
+            end
+            
+            Ip=Ip.*Imask;
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                   filter the boundary of the tiled patch
+%             mask=fspecial('average',10);
+%             for i=1:qy-1
+%                 yy=wind*i;
+%                 hstrip=Ip(yy-5:min(yy+5,H),:,:);
+%                 hstrip=imfilter(hstrip,mask);
+%                 Ip(yy-5:min(yy+5,H),:,:)=hstrip;
+%             end
 %             
-% %             I2=obfuscation(x1,y1,I1,I2);
-% %             
-%             I2=occlude(x2,y2,I2,teximage);
-            
-            
+%             for j=1:qx-1
+%                 xx=wind*j;
+%                 vstrip=Ip(:,xx-5:min(xx+5,W),:);
+%                 vstrip=imfilter(vstrip,mask);
+%                 Ip(:,xx-5:min(xx+5,W),:)=vstrip;
+%             end
+
+
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%             dither all the keypoints on the right
+    
+            Ip=Ip./max(Ip(:));
+            I2=double(I2);
+            I2dith=(I2./max(I2(:)));
+            t=2;
+            h=2*t+1;
+            w=2*t+1;
+            for i=1:nkeys
+                xx=round(locs(i,2));
+                yy=round(locs(i,1));
+                dithTemp=I2(max(1,yy-t):min(H,yy+t),max(1,xx-t):min(W,xx+t),:) ;
+                dithTemp=orderedDith((dithTemp),2);
+                I2dith(max(1,yy-t):min(H,yy+t),max(1,xx-t):min(W,xx+t),:)= dithTemp;
+            end
+             
+           
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%             
+             I2=Ip+I2dith;
+% %            
+% %             I2=uint8(I2);
             %%%%% compute the sift descriptor of the two frame %%%%%%%%%%%
+            I2=uint8((I2-min(I2(:)))/(max(I2(:))-min(I2(:)))*255);
+%             mask=fspecial('average',5);
+%             I2=imfilter(I2,mask);
             [image1, des1, locs1]=sift(I1);
+            
+            
             [image2, des2, locs2]=sift(I2);
             
             if size(des1,1)<60
@@ -172,7 +246,6 @@ for model=1001:1000+numModel
             
             %using motion estimation
             
-%             trackPoint=motionEstimation([x1 y1],des1,locs1,des2,locs2);
             
             
 
@@ -217,7 +290,8 @@ for model=1001:1000+numModel
 %             Irite=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint,rightpoint );
 
             Ileft=showPoints(I1,'red',x1,y1,2,[],[],[]);
-            Irite=showPoints(I2,'red',x2,y2,2,[],[],[]);
+%             Irite=showPoints(I2,'red',x2,y2,2,[],[],[]);
+            Irite=I2;
             
             imwrite(Ileft,leftI,'jpg');
             imwrite(Irite,rightI,'jpg');
@@ -232,7 +306,7 @@ for model=1001:1000+numModel
             rightname=sprintf('''/tmp/%d_right.jpg''',model);
             
             fprintf(leftTable,'INSERT INTO leftImageRepo VALUES (%d, LOAD_FILE(%s));\n',model,leftname);
-            fprintf(rightTable,'INSERT INTO rightImageRepo VALUES (%d, LOAD_FILE(%s));\n',model,leftname);
+            fprintf(rightTable,'INSERT INTO rightImageRepo VALUES (%d, LOAD_FILE(%s));\n',model,rightname);
             
         end
     end
