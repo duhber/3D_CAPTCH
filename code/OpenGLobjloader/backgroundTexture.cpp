@@ -80,7 +80,7 @@ unsigned int backgroundTexture::drawBG(float r){
 	unsigned int num;
 	num=glGenLists(1);
 	float z;
-	z=5;
+	z=8;
 	glNewList(num,GL_COMPILE);
     	glEnable(GL_TEXTURE_2D);
     	glBindTexture(GL_TEXTURE_2D,texid);

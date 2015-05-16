@@ -87,6 +87,7 @@ class objloader{
 		~objloader();
 	 	void loadObj(const char* objname);
 	 	unsigned int drawModel();
+	 	unsigned int drawBoundingBox();
 };
 
 

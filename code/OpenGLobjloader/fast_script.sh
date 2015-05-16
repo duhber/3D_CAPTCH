@@ -71,8 +71,13 @@ for i in $(ls $modeldir|grep '\.obj$');do
         #echo "$x"
         #echo "$y"
         
-        startx=$(($x-50))
-        starty=$(($y-50))
+        sizex=25
+        sizey=25
+        sizexx=51
+        sizeyy=51
+
+        startx=$(($x-$sizex))
+        starty=$(($y-$sizey))
 
         if [ $startx -lt 1 ]
         then
@@ -84,21 +89,21 @@ for i in $(ls $modeldir|grep '\.obj$');do
             starty=1
         fi 
 
-        ty=$(($starty+100))
-        tx=$(($startx+100))
+        ty=$(($starty+$sizeyy-1))
+        tx=$(($startx+$sizexx-1))
 
         if [ $ty -gt 399 ]
         then
-            height=$((101-ty+399))
+            height=$(($sizeyy-$ty+399))
         else
-            height=101
+            height=$sizeyy
         fi
 
         if [ $tx -gt 599 ]
         then 
-            width=$((101-tx+599))
+            width=$(($sizexx-$tx+599))
         else
-            width=101
+            width=$sizexx
 
         fi
 

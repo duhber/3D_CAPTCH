@@ -475,3 +475,48 @@ void objloader::setMannequin(float amb[], float dif[], float spc[], int matId){
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
 	glMaterialf(GL_FRONT, GL_SHININESS, mtl[matId]->Ns);
 }
+unsigned int objloader::drawBoundingBox(){
+	unsigned int num;
+
+	num=glGenLists(1);
+    glNewList(num,GL_COMPILE);
+    	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    	glBegin(GL_QUADS);
+    		glVertex3f(min.x,min.y,min.z);
+    		glVertex3f(min.x,min.y,max.z);
+    		glVertex3f(min.x,max.y,max.z);
+    		glVertex3f(min.x,max.y,min.z);
+
+    		glVertex3f(min.x,min.y,max.z);
+    		glVertex3f(max.x,min.y,max.z);
+    		glVertex3f(max.x,max.y,max.z);
+    		glVertex3f(min.x,max.y,max.z);
+
+    		glVertex3f(max.x,min.y,max.z);
+    		glVertex3f(max.x,min.y,min.z);
+    		glVertex3f(max.x,max.y,min.z);
+    		glVertex3f(max.x,max.y,max.z);
+
+    		glVertex3f(max.x,min.y,min.z);
+    		glVertex3f(min.x,min.y,min.z);
+    		glVertex3f(min.x,max.y,min.z);
+    		glVertex3f(max.x,max.y,min.z);
+
+    		glVertex3f(min.x,max.y,max.z);
+    		glVertex3f(max.x,max.y,max.z);
+    		glVertex3f(max.x,max.y,min.z);
+    		glVertex3f(min.x,max.y,min.z);
+
+    		glVertex3f(min.x,min.y,max.z);
+    		glVertex3f(min.x,min.y,min.z);
+    		glVertex3f(max.x,min.y,min.z);
+    		glVertex3f(max.x,min.y,max.z);
+    	glEnd();
+    	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+
+    glEndList();
+
+    displayList.push_back(num);
+
+	return num;
+}

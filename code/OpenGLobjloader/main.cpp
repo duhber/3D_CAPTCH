@@ -65,7 +65,6 @@ void processNormalKeys(unsigned char key, int x, int y);
 
 void unProject();
 void unProject(float x, float y);
-void unProject(float x, float y, double * , double *, double *);
 void Project();
 void Project(GLdouble x, GLdouble y, GLdouble z);
 
@@ -88,7 +87,9 @@ void selectChallengePoint();
 
 void writeDepthDiff();
 
-void isObjCloseToCam();
+void setInitialPos();
+
+double isObjCloseToCam();
 
 /* ************** global variables ********************** */
 
@@ -140,6 +141,7 @@ bool showBox=false;
 
 float theta_init;
 float phi_init;
+float R_init;
 int pointIndex;
 
 double depth_diff;
@@ -178,7 +180,7 @@ int main(int argc, char **argv){
     	unpname=argv[4];
     	keyobj.readObjpoints(unpname);
     	pointIndex=atoi(argv[6]);
-    	cout<<"point Index:---->  "<<pointIndex<<endl;
+    	//cout<<"point Index:---->  "<<pointIndex<<endl;
     	framenum=1;
     }
     /**********************************************/
@@ -201,7 +203,7 @@ int main(int argc, char **argv){
     glutSpecialFunc(processSpecialKeys);
     glutMouseFunc(processMouse);
     glutKeyboardFunc(processNormalKeys);
-    //glutIdleFunc(idle);
+    glutIdleFunc(idle);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
                   GLUT_ACTION_GLUTMAINLOOP_RETURNS);
     glutMainLoop();
@@ -266,7 +268,7 @@ void display(){
     	//isUnProject=false;
     }
 
-    if(mode[0]=='1'){
+    if(mode[0]=='1'){ //&&  isObjCloseToCam()>5.0){
 		capture_frame(framenum);
 		char mystr[256];
 		sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
@@ -275,8 +277,14 @@ void display(){
 
     }
 
-    if(mode[0]=='3'){
+    if(mode[0]=='3'  ){ //isObjCloseToCam()>5.0 ){
+
+
+
+
+
 		Project();
+
 
 		if( cpVisible){
 			capture_frame(framenum);
@@ -296,7 +304,7 @@ void display(){
 
     if(framenum==3){
 
-    	cout<<filename<<endl;
+    	//cout<<filename<<endl;
     	writeDepthDiff();
     	glutLeaveMainLoop();
 
@@ -343,7 +351,7 @@ void init(){
     //glLightfv(GL_LIGHT5,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT5,GL_AMBIENT,col0);
 
-    //glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
+    glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT6,GL_AMBIENT,col0);
 
     GLfloat pos0[]={50.0,50.0,50.0,1.0};
@@ -391,6 +399,7 @@ void init(){
     }
     theta_init=keyobj.theta;
     phi_init=keyobj.phi;
+    R_init=R;
     if(mode[0]=='3'){
         bg1.loadTexture(texfile);
         tex1=bg1.drawBG(R*3);
@@ -631,6 +640,7 @@ void Project(GLdouble pX, GLdouble pY, GLdouble pZ){
 
 	glReadPixels( winX, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &zdepth );
 	winY = (double)viewport[3] - winY;
+
 	cout<<winX<<" "<<winY<<" "<<endl;
 	cout<<"winZ = "<<winZ<<" "<<"zdepth = "<<zdepth<<endl;
 	cout<<"diff = "<<fabs(winZ-zdepth)<<endl;
@@ -674,7 +684,7 @@ void unProject(float x, float y, double * _X , double *_Y, double *_Z){
 	//cout<<winZ<<endl;
 	gluUnProject( winX, winY, winZ, modelview, projection, viewport,_X, _Y, _Z);
 
-	//cout<<posX<<" "<<posY<<" "<<posZ<<endl;
+	cout<<*_X<<" "<<*_Y<<" "<<*_Z<<endl;
 
 }
 
@@ -720,22 +730,19 @@ void genViewPoints(){
 	if(!sign)
 		sign=-1;
 	int	sign2=rand()%2;
-	//if(!sign2)
+	if(!sign2)
 		sign2=-1;
 
 	float del1,del2, delR;
 
-	del1=rand()%30+30;
+	del1=rand()%60+30;
 	del2=rand()%5+15;
+	delR=rand()%5;
 
-//	keyobj.theta=theta_init+15;
-	//keyobj.phi=phi_init;
-
-	delR=rand()%7;
-
-	keyobj.theta+=del1*sign;
-	keyobj.phi+=del2*sign2;
-	cout<<keyobj.theta<<" "<<keyobj.phi<<endl;
+	R=R_init+sign2*delR;
+	keyobj.theta=theta_init+del1*sign;
+	keyobj.phi=phi_init-del2;
+	//cout<<keyobj.theta<<" "<<keyobj.phi<<endl;
 }
 
 bool isObjectPoint(double x, double y, double z){
@@ -749,11 +756,15 @@ bool isObjectPoint(double x, double y, double z){
 
 
 void idle(){
-
-    if(framenum==1){
+	if(mode[0]!='1' && framenum==1){
     	genViewPoints();
     }
+	else
+		if(mode[0]=='1'){
+		setInitialPos();
+	}
     setCamera();
+    setLight(0);
     //genLightSource(3);
     glutPostRedisplay();
 }
@@ -832,22 +843,48 @@ void writeDepthDiff(){
 	dfile.close();
 }
 
-void isObjCloseToCam(){
-	double *_X, *_Y,*_Z;
+double isObjCloseToCam(){
+	GLint viewport[4];
+	GLdouble modelview[16];
+	GLdouble projection[16];
+	GLfloat winX, winY, winZ;
+
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	glGetIntegerv( GL_VIEWPORT, viewport );
+	double _X, _Y,_Z;
 	int count=0;
 	double dist, total=0.0;
+
 	for(int xx=1;xx<=600;xx++){
 		for(int yy=1;yy<=400;yy++){
-			unProject(xx,yy,_X,_Y,_Z);
 
-			if(isObjectPoint(*_X, *_Y,*_Z)){
 
-				dist=sqrt(pow(keyobj.eyex-*_X,2)+pow(keyobj.eyey-*_Y,2)+pow(keyobj.eyez-*_Z,2));
+			winX = (float)xx;
+			winY = (float)viewport[3] - (float)yy;
+
+			glReadPixels( xx, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
+
+			//cout<<winZ<<endl;
+			gluUnProject( winX, winY, winZ, modelview, projection, viewport,&_X, &_Y, &_Z);
+
+			if(isObjectPoint(_X, _Y,_Z)){
+
+				dist=sqrt(pow(keyobj.eyex-_X,2)+pow(keyobj.eyey-_Y,2)+pow(keyobj.eyez-_Z,2));
 				total+=dist;
 				count++;
 			}
 		}
 	}
 	cout<<total/count<<endl;
+	double avg=total/count;
+	return avg;
+}
+
+void setInitialPos(){
+	srand(time(NULL));
+	keyobj.phi=100-rand()%45;
+	keyobj.theta=rand()%360;
+
 }
 
