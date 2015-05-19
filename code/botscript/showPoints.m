@@ -65,13 +65,13 @@ end
 
 t=25;
 w=1;
-square=uint8(zeros(2*t+1,2*t+1,3));
+square=double(zeros(2*t+1,2*t+1,3));
 square(:,:,2)=maxel;
 square(w+1:2*t+1-w,w+1:2*t+1-w,2)=0;
 unmask=square;
 unmask(:,:,:)=maxel;
 unmask(w+1:2*t+1-w,w+1:2*t+1-w,:)=0;
-mask=uint8(logical(unmask==0));
+mask=double(logical(unmask==0));
 
 quad_1=Im(max(1,y-t):y,x:min(W,x+t),:);
 quad_2=Im(max(1,y-t):y,max(1,x-t):x,:);
