@@ -79,6 +79,7 @@ class objloader{
 		void setMannequin(float amb[], float dif[], float spc[], int id);
 
 	public:
+		bool dither;
 		float dimension[3];
 		coordinate *center_of_body;
 		float radiusBV;//radius of the bounding volume

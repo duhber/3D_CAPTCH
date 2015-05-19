@@ -44,6 +44,7 @@ material::material(){
 
 objloader::objloader(){
 	includeTexture=false;
+	dither=false;
 }
 
 unsigned int objloader::loadTexture(const char * imgname){
@@ -294,11 +295,18 @@ void objloader::loadMaterial(const char* mtlname){
 			len=strlen(filename);
 			char temp[256];
 			strcpy(temp,dirname);
-			if(filename[len-1]=='g'){
+			/*if(filename[len-1]=='g'){
 				filename[len-1]='p';
 				filename[len-2]='m';
 				filename[len-3]='b';
-			}
+			}*/
+			filename[len-4]='\0';
+			char type[16];
+			if(dither)
+				strcpy(type,"_d.bmp");
+			else
+				strcpy(type,".bmp");
+			strcat(filename,type);
 			strcat(temp,filename);
 			//cout<<temp<<endl;
 			mtl[id]->texId=loadTexture(temp);
