@@ -7,6 +7,11 @@ for i in $(ls $modeldir|grep '\.obj$');do
     
         dir=$((dir+1))
 
+        if [ -d "../frame/$dir" ] && [ $stopPoint -eq 1 ]
+        then
+            continue
+        fi
+
         while  [ -d "../frame/$dir" ]
         do
             dir=$((dir+1))
