@@ -9,6 +9,7 @@
 #include "objloader.h"
 #include<new>
 #include<stack>
+#include<random>
 coordinate::coordinate(float a, float b, float c){
 	x=a;
 	y=b;
@@ -331,6 +332,12 @@ unsigned int objloader::drawModel(){
     get3FloatNum(amb);
     get3FloatNum(dif);
     get3FloatNum(spc);*/
+
+    random_device rd;
+    mt19937 gen(rd());
+
+    normal_distribution<>d(0.5,10);
+
     num=glGenLists(1);
 
     glNewList(num,GL_COMPILE);
@@ -343,6 +350,25 @@ unsigned int objloader::drawModel(){
     			setMaterial(material);
     			prevmtl=material;
     		}
+
+    		if(dither){// add gaussian noise
+    			GLfloat mat_amb[4], mat_dif[4],mat_spc[4];
+    			for(int i=0;i<3;i++){
+    				mat_amb[i]=(mtl[material]->Ka[i]+d(gen))/100.0;
+    				mat_dif[i]=(mtl[material]->Kd[i]+d(gen))/100.0;
+    				mat_spc[i]=(mtl[material]->Ks[i]+d(gen))/100.0;
+    			}
+    			mat_amb[3]=1.0;
+    			mat_dif[3]=1.0;
+    			mat_spc[3]=1.0;
+    			glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
+    			glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
+    			glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spc);
+    			glMaterialf(GL_FRONT, GL_SHININESS, mtl[material]->Ns);
+
+    		}
+
+
     		if(!includeTexture){
     			setMannequin(amb, dif, spc, material);
     		}

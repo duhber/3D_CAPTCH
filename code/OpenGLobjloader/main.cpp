@@ -181,7 +181,7 @@ int main(int argc, char **argv){
     if(mode[0]=='3'){
     	texfile=argv[5];
     	unpname=argv[4];
-    	obj.dither=true;
+    	obj.dither=false;
     	keyobj.readObjpoints(unpname);
     	pointIndex=atoi(argv[6]);
     	//cout<<"point Index:---->  "<<pointIndex<<endl;
