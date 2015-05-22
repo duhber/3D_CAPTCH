@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=303;
+    numModel=110;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -40,7 +40,7 @@ clear all;
     rightTable=fopen('../image/right.sql','w');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model=1001:1000+numModel
+for model = 1001:1000+numModel
     disp(model);
     
     for frame1=0:0
@@ -126,23 +126,26 @@ for model=1001:1000+numModel
             Imask(:,:,2)=double(Izeros(:,:));
             Imask(:,:,3)=double(Izeros(:,:));
             
-            wind=63;    
+            wind=24;    
             
-            patchList=zeros(21,21,3,18);
+            t=floor(wind/2);
             
-            patchList(:,:,:,1:9)=getPatch(I1,x1,y1,wind);
-            patchList(:,:,:,10:18)=getPatch(I2,x2,x2,wind);
-%             patch(:,:,:,2)=getPatch(I2,x2,y2,wind);
-
+            pointList=getNearPoints(I1,x1,y1,25);
+            
+            patchList=getKeyPtsPatch(I1,pointList,wind);
+            
+            size(patchList,4)
+            size(pointList,1)
+            
             Ip=zeros(H,W,3);
             
-            for i=1:18
+            for i=1:size(patchList,4)
                 for j=1:20
-                    qx=randi([11 590]); 
-                    qy=randi([11 390]);
-                    Ip(qy-10:qy+10,qx-10:qx+10,:)=patchList(:,:,:,i);
+                    qx=randi([t+1 W-t+1]); 
+                    qy=randi([t+1 H-t+1]);
+                    Ip(qy-t:qy+t-1,qx-t:qx+t-1,:)=patchList(:,:,:,i);
                 end
-            end
+            end            
             
             Ip=Ip.*Imask;
             Ip=Ip./max(Ip(:));
@@ -189,7 +192,7 @@ for model=1001:1000+numModel
             leftpoint=[];
             rightpoint=[];
             trackPoint=nearestSIFTmethod([x1 y1],des1,locs1,des2,locs2);
-%             [leftpoint, rightpoint]=nNearestSiftPoints([x1 y1],des1,locs1,des2,locs2,10);
+            [leftpoint, rightpoint]=nNearestSiftPoints([x1 y1],des1,locs1,des2,locs2,10);
             
             
            
@@ -256,11 +259,11 @@ for model=1001:1000+numModel
             leftI=sprintf('../image/%d_left.jpg',model);
             rightI=sprintf('../image/%d_right.jpg',model);
             
-%             Ileft=showPoints(I1,'red',x1,y1,2,[],[],leftpoint);
-%             Irite=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint,rightpoint );
+            Ileft=showPoints(I1,'red',x1,y1,2,[],[],leftpoint);
+            Irite=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint,rightpoint );
 
-            Ileft=showPoints(I1,'red',x1,y1,2,[],[],[]);
-            Irite=showPoints(I2,'red',x2,y2,2,[],[],[]);
+%             Ileft=showPoints(I1,'red',x1,y1,2,[],[],[]);
+%             Irite=showPoints(I2,'red',x2,y2,2,[],[],[]);
 %             Irite=I2;
             
             imwrite(Ileft,leftI,'jpg');
