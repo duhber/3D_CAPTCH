@@ -49,7 +49,7 @@ void backgroundTexture::loadTexture(const char * imgname){
     fclose(file);
     char temp;
 
- /*   for(int i=0;i<imsize;i+=3){
+    for(unsigned int i=0;i<imsize;i+=3){
         temp=data[i];
         data[i]=data[i+2];
         data[i+2]=temp;

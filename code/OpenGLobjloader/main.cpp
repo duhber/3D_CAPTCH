@@ -149,6 +149,10 @@ int pointIndex;
 
 double depth_diff;
 
+int countLimit=0;
+
+int return_val=0;
+
 /** ******************************************************************************* **/
 
 
@@ -213,6 +217,7 @@ int main(int argc, char **argv){
                   GLUT_ACTION_GLUTMAINLOOP_RETURNS);
     glutMainLoop();
 
+    return return_val;
 }
 
 void display(){
@@ -307,9 +312,14 @@ void display(){
     if(framenum==3){
 
     	//cout<<filename<<endl;
-    	writeDepthDiff();
+    	//writeDepthDiff();
     	glutLeaveMainLoop();
 
+    }
+
+    if(countLimit>500){
+    	return_val=1;
+    	glutLeaveMainLoop();
     }
     /** ---------------- **/
     glutSwapBuffers();
@@ -325,10 +335,21 @@ void init(){
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHT1);
     glEnable(GL_LIGHT2);
-    glEnable(GL_LIGHT3);
-    glEnable(GL_LIGHT4);
-    glEnable(GL_LIGHT5);
+    //glEnable(GL_LIGHT3);
+    //glEnable(GL_LIGHT4);
+   // glEnable(GL_LIGHT5);
     glEnable(GL_LIGHT6);
+
+
+    /********************************/
+    obj.loadObj(filename);
+    model1=obj.drawModel();
+
+    //scale down if it is too big
+    s=30.0/obj.dimension[0];
+
+    R=(obj.radiusBV)*s*0.75;
+    /*******************************/
 
     GLfloat col0[]={1.0,1.0,1.0,1.0};
     GLfloat col1[]={0.0,0.0,1.0,1.0};
@@ -356,37 +377,31 @@ void init(){
     glLightfv(GL_LIGHT6,GL_DIFFUSE,col0);
     glLightfv(GL_LIGHT6,GL_AMBIENT,col0);
 
-    GLfloat pos0[]={50.0,50.0,50.0,1.0};
+    GLfloat pos0[]={R,R,R,1.0};
     glLightfv(GL_LIGHT0,GL_POSITION,pos0);
 
-    GLfloat pos1[]={150.0,0.0,0.0,1.0};
+    GLfloat pos1[]={R,0.0,0.0,1.0};
     glLightfv(GL_LIGHT1,GL_POSITION,pos1);
 
-    GLfloat pos2[]={0.0,150.0,0.0,1.0};
+    GLfloat pos2[]={0.0,R,0.0,1.0};
     glLightfv(GL_LIGHT2,GL_POSITION,pos2);
 
-    GLfloat pos3[]={0.0,0.0,150.0,1.0};
+    GLfloat pos3[]={0.0,0.0,R,1.0};
     glLightfv(GL_LIGHT3,GL_POSITION,pos3);
 
-    GLfloat pos4[]={-100.0,0.0,0.0,1.0};
+    GLfloat pos4[]={-1*R,0.0,0.0,1.0};
     glLightfv(GL_LIGHT4,GL_POSITION,pos4);
 
-    GLfloat pos5[]={0.0,0.0,-100.0,1.0};
+    GLfloat pos5[]={0.0,0.0,-1*R,1.0};
     glLightfv(GL_LIGHT5,GL_POSITION,pos5);
 
-    GLfloat pos6[]={0.0,-100.0,0.0,1.0};
+    GLfloat pos6[]={0.0,-1*R,0.0,1.0};
     glLightfv(GL_LIGHT6,GL_POSITION,pos6);
 
     glEnable(GL_MULTISAMPLE);
     glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 
-    obj.loadObj(filename);
-    model1=obj.drawModel();
 
-    //scale down if it is too big
-    s=30.0/obj.dimension[0];
-
-    R=(obj.radiusBV)*s*0.75;
 
     bbox=obj.drawBoundingBox();
 
@@ -404,7 +419,7 @@ void init(){
     R_init=R;
     if(mode[0]=='3'){
         bg1.loadTexture(texfile);
-        tex1=bg1.drawBG(R*3);
+        tex1=bg1.drawBG(R*7);
 
     	genViewPoints();
 
@@ -550,6 +565,11 @@ void processNormalKeys(unsigned char key, int x, int y){
 				showBox=true;
 		break;
 
+		case 'x':
+			return_val=1;
+			glutLeaveMainLoop();
+		break;
+
 		case 'z':
 			cout<<keyobj.eyex<<" "<<keyobj.eyey<<" "<<keyobj.eyez<<" ";
 
@@ -640,6 +660,7 @@ void checkVisibility(){
 	int temp;
 	in>>temp;
 	int cntVisible=0;
+	int countTotal=0;
 	while(!in.eof()){
 		in>>posX>>posY>>posZ;
 
@@ -653,15 +674,18 @@ void checkVisibility(){
 
 		depth_diff=fabs(winZ-zdepth);
 
+		countTotal++;
+
 		if(depth_diff<0.001  and winX>0 and winY>0 )
 			cntVisible++;
 
 	}
-	if(cntVisible>8)
+	visibility=((float)cntVisible/(float)countTotal)*100.0;
+	if(visibility>80.0)
 		cpVisible=true;
 	else
 		cpVisible=false;
-	cout<<"visibility "<<cntVisible<<endl;
+	cout<<"visibility "<<cntVisible<<" "<<countTotal<<" "<<visibility<<endl;
 }
 
 void Project(GLdouble pX, GLdouble pY, GLdouble pZ){
@@ -779,7 +803,7 @@ void genViewPoints(){
 	float del1,del2, delR;
 
 	del1=rand()%60+30;
-	del2=rand()%5+15;
+	del2=rand()%5+10;
 	delR=rand()%5;
 
 	R=R_init+sign2*delR;
@@ -800,14 +824,19 @@ bool isObjectPoint(double x, double y, double z){
 
 void idle(){
 	if(mode[0]!='1' && framenum==1){
+		countLimit++;
+		cout<<"generating viewpoints --->>"<<countLimit<<endl;
     	genViewPoints();
+        setCamera();
+        setLight(0);
     }
 	else
 		if(mode[0]=='1'){
 		setInitialPos();
+	    setCamera();
+	    setLight(0);
 	}
-    setCamera();
-    setLight(0);
+
     //genLightSource(3);
     glutPostRedisplay();
 }

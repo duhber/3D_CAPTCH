@@ -60,7 +60,7 @@ unsigned int objloader::loadTexture(const char * imgname){
     FILE *file=fopen(imgname,"rb");
     if(!file){
         cout<<"Image could not be open\n";
-        exit(0);
+        exit(1);
     }
     if(fread(header,1,54,file)!=54 || header[0]!='B' || header[1]!='M'){
         cout<<"Not a correct BMP file\n";
