@@ -536,6 +536,7 @@ void processNormalKeys(unsigned char key, int x, int y){
 			capture_frame(framenum);
 			sprintf(mystr,"%s/frame_%04d.p",modelno,framenum);
 			keyobj.writeKeypoints(mystr);
+            cout<<"This is model number  "<<modelno<<endl;
 			glutLeaveMainLoop();
 		break;
 

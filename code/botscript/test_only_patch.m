@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=110;
+    numModel=616;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -35,9 +35,6 @@ clear all;
     save=0;
     NRSIFT = 0;
     MOTEST = 0;
-    
-    leftTable=fopen('../image/left.sql','w');
-    rightTable=fopen('../image/right.sql','w');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for model = 1001:1000+numModel
@@ -126,7 +123,7 @@ for model = 1001:1000+numModel
             Imask(:,:,2)=double(Izeros(:,:));
             Imask(:,:,3)=double(Izeros(:,:));
             
-            wind=24;    
+            wind=32;    
             
             t=floor(wind/2);
             
@@ -140,7 +137,7 @@ for model = 1001:1000+numModel
             Ip=zeros(H,W,3);
             
             for i=1:size(patchList,4)
-                for j=1:20
+                for j=1:2
                     qx=randi([t+1 W-t+1]); 
                     qy=randi([t+1 H-t+1]);
                     Ip(qy-t:qy+t-1,qx-t:qx+t-1,:)=patchList(:,:,:,i);
@@ -192,7 +189,7 @@ for model = 1001:1000+numModel
             leftpoint=[];
             rightpoint=[];
             trackPoint=nearestSIFTmethod([x1 y1],des1,locs1,des2,locs2);
-            [leftpoint, rightpoint]=nNearestSiftPoints([x1 y1],des1,locs1,des2,locs2,10);
+%             [leftpoint, rightpoint]=nNearestSiftPoints([x1 y1],des1,locs1,des2,locs2,10);
             
             
            
@@ -278,8 +275,6 @@ for model = 1001:1000+numModel
             leftname=sprintf('''/tmp/%d_left.jpg''',model);
             rightname=sprintf('''/tmp/%d_right.jpg''',model);
             
-            fprintf(leftTable,'INSERT INTO leftImageRepo VALUES (%d, LOAD_FILE(%s));\n',model,leftname);
-            fprintf(rightTable,'INSERT INTO rightImageRepo VALUES (%d, LOAD_FILE(%s));\n',model,rightname);
             
         end
     end
@@ -301,12 +296,3 @@ disp('motion estimation');
 total_MOTEST=(MOTEST/count)*100;
 
 disp(total_MOTEST);
-%save the point to tab separated valuestr
-
-
-fileID = fopen('../image/groundTruth.sql','w');
-fprintf(fileID,'INSERT INTO ground_truth VALUES (%d,%d,%d,%d);\n',Xdata(:,1:count));
-
-fclose(fileID);
-fclose(leftTable);
-fclose(rightTable);

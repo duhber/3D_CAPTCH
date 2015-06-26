@@ -22,7 +22,7 @@ clear all;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              INITIALIZE VARIABLES
-    numModel=616;
+    numModel=1;
     
     modelDir='../frame/%d/frame_000%d.';
     
@@ -37,9 +37,19 @@ clear all;
     
     leftTable=fopen('../image/left.sql','w');
     rightTable=fopen('../image/right.sql','w');
+    
+    user_model=csvread('./user_attempt_fail.csv');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for model = 1001:1000+numModel
+for sqlmodel = 1:size(user_model,1)%+numModel
+    
+    if(user_model(sqlmodel,2)>=2)
+        model=user_model(sqlmodel,1);
+    else
+        continue;
+    end
+    
+    
     disp(model);
     
     for frame1=0:0
@@ -290,8 +300,8 @@ for model = 1001:1000+numModel
 %             Irite=showPoints(I2,'red',x2,y2,2,sift_track_point,trackPoint,rightpoint );
 
              Ileft=showPoints(I1,'red',x1,y1,2,[],[],[]);
-%             Irite=showPoints(I2,'red',x2,y2,2,[],[],[]);
-            Irite=I2;
+            Irite=showPoints(I2,'red',x2,y2,2,[],[],[]);
+%             Irite=I2;
             
             imwrite(Ileft,leftI,'jpg');
             imwrite(Irite,rightI,'jpg');
